@@ -59,44 +59,29 @@ namespace OpenGL_Training
         {
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-            _vertexArrayObject = GL.GenVertexArray();
-            GL.BindVertexArray(_vertexArrayObject);
-
-            GL.EnableVertexAttribArray(0);
-            GL.EnableVertexAttribArray(1);
-
-            _vertexBufferObject = CopyDataToBuffer(verticesData, 0);
-            _colorBufferObject = CopyDataToBuffer(colorData, 1);
-            _elementBufferObject = CopyElementDataToBuffer(_indices);
-            
             _shader = new Shader("../../shader.vert", "../../shader.frag");
             _shader.Use();
             _shader.SetVector4("blob.InnerColor", new Vector4(1.0f, 0.0f, 0.0f, 1));
             _shader.SetVector4("blob.OuterColor", new Vector4(0.0f, 0.0f, 0.0f, 1));
             _shader.SetFloat("blob.RadiusInner", 0.05f);
             _shader.SetFloat("blob.RadiusOuter", 0.15f);
+
+            _vertexArrayObject = GL.GenVertexArray();
+            GL.BindVertexArray(_vertexArrayObject);
+
+            ///GL.EnableVertexAttribArray(0);
+            //GL.EnableVertexAttribArray(1);
+
+            _vertexBufferObject = CopyData.ToArrayBuffer(verticesData, _shader, "VertexPosition",3);
+            _colorBufferObject = CopyData.ToArrayBuffer(colorData, _shader, "VertexColor", 3);
+            _elementBufferObject = CopyData.ToElementBuffer(_indices);
+            
+            
             
             base.OnLoad(e);
         }
 
-        private int CopyDataToBuffer(float[] data, int index)
-        {
-            int handle = GL.GenBuffer();
-            GL.BindBuffer(BufferTarget.ArrayBuffer, handle);
-            GL.BufferData(BufferTarget.ArrayBuffer, data.Length * sizeof(float), data, BufferUsageHint.StaticDraw);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, handle);
-            GL.VertexAttribPointer(index, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
-            return handle;
-        }
-
-        private int CopyElementDataToBuffer(uint[] data)
-        {
-            int handle = GL.GenBuffer();
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, handle);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, data.Length * sizeof(uint), data, BufferUsageHint.StaticDraw);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, handle);
-            return handle;
-        }
+        
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
@@ -149,7 +134,5 @@ namespace OpenGL_Training
             _shader.Handle.Delete();
             base.OnUnload(e);
         }
-
-        
     }
 }

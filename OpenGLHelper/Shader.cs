@@ -130,5 +130,11 @@ namespace OpenGLHelper
             Handle.Use();
             GL.Uniform4(_uniformLocations[name], data);
         }
+
+        public int GetAttribLocation(string attribName)
+        {
+            return Handle.GetAttribLocation(attribName);
+        }
+
     }
 }
