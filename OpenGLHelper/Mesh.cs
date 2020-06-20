@@ -1,4 +1,5 @@
-﻿using OpenTK;
+﻿using System;
+using OpenTK;
 using System.Collections.Generic;
 
 namespace OpenGLHelper
@@ -16,7 +17,6 @@ namespace OpenGLHelper
 
         public static (float[] vertices, uint[] indices) PlainXY(Vector3 center, float width, float height, uint nx, uint ny)
         {
-
             imax = nx;
             jmax = ny;
             xMin = center.X - width / 2;
@@ -28,7 +28,6 @@ namespace OpenGLHelper
             List<float> vertices = new List<float>(1000);
             stepX = (xMax - xMin) / imax;
             stepY = (yMax - yMin) / jmax;
-
 
             for (var i = 0; i <= imax; i++)
             {
@@ -64,9 +63,9 @@ namespace OpenGLHelper
             var stepV = 1.0f / ny;
 
 
-            for (var i = 0; i <= imax; i++)
+            for (var j = 0; j <= jmax; j++)
             {
-                for (var j = 0; j <= jmax; j++)
+                for (var i = 0; i <= imax; i++)
                 {
                     vertices.Add(xMin + i * stepX);
                     vertices.Add(yMin + j * stepY);
@@ -100,8 +99,6 @@ namespace OpenGLHelper
                     vertices.Add(xMin + i * stepX);
                     vertices.Add(yMin + j * stepY);
                     vertices.Add(0);
-
-
                 }
             }
             var indices = IndicesForPlain();
@@ -141,31 +138,43 @@ namespace OpenGLHelper
             }
             var indices = IndicesForPlain();
             return (vertices.ToArray(), indices);
-
-
         }
+
+
+        public static (float[] vertices, uint[] indices) TriangleXYUV(Vector2 center, float side)
+        {
+            float[] vertices = new float[]
+            {
+                center.X - side/2, center.Y - side * (float)Math.Sqrt(3)/6, 0,
+                center.X, center.Y + side * (float)Math.Sqrt(3)/6, 0,
+                center.X + side/2, center.Y - side * (float)Math.Sqrt(3)/6, 0,
+            };
+           // vertices[0] = center 
+            
+            uint[] indices = {0,1,2};
+            return (vertices, indices);
+        }
+
 
         private static uint[] IndicesForPlain()
         {
             List<uint> indices = new List<uint>(100);
 
             var jNum = jmax + 1;
-            for (uint i = 0; i < imax; i++)
+            for (uint j = 0; j < jmax; j++)
             {
-                for (uint j = 0; j < jmax; j++)
+                for (uint i = 0; i < imax; i++)
                 {
                     indices.Add(i * jNum + j);
-                    indices.Add(i * jNum + j + 1);
                     indices.Add((i + 1) * jNum + j);
+                    indices.Add(i * jNum + j + 1);
 
                     indices.Add((i + 1) * jNum + j);
-                    indices.Add(i * jNum + j + 1);
                     indices.Add((i + 1) * jNum + j + 1);
-
+                    indices.Add(i * jNum + j + 1);
                 }
             }
             return indices.ToArray();
-
         }
     }
 }

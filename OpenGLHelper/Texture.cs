@@ -1,14 +1,26 @@
-﻿using System.Drawing;
+﻿using OpenTK.Graphics.OpenGL4;
+using System.Drawing;
 using System.Drawing.Imaging;
-using OpenTK.Graphics.OpenGL4;
+using OpenTK.Graphics.ES11;
+using GL = OpenTK.Graphics.OpenGL4.GL;
+using InternalFormat = OpenTK.Graphics.OpenGL4.InternalFormat;
 using PixelFormat = OpenTK.Graphics.OpenGL4.PixelFormat;
+using PixelType = OpenTK.Graphics.OpenGL4.PixelType;
+using TextureMagFilter = OpenTK.Graphics.OpenGL4.TextureMagFilter;
+using TextureMinFilter = OpenTK.Graphics.OpenGL4.TextureMinFilter;
+using TextureParameterName = OpenTK.Graphics.OpenGL4.TextureParameterName;
+using TextureTarget = OpenTK.Graphics.OpenGL4.TextureTarget;
+using TextureUnit = OpenTK.Graphics.OpenGL4.TextureUnit;
+using TextureWrapMode = OpenTK.Graphics.OpenGL4.TextureWrapMode;
 
 
 namespace OpenGLHelper
 {
-    class Texture
+    public class Texture
     {
         public readonly int Handle;
+        private int _width;
+        private int _height;
 
         // Create texture from path.
         public Texture(string path)
@@ -32,9 +44,11 @@ namespace OpenGLHelper
                 //   we only need ReadOnly.
                 //   Next is the pixel format we want our pixels to be in. In this case, ARGB will suffice.
                 //   We have to fully qualify the name because OpenTK also has an enum named PixelFormat.
+                _width = image.Width;
+                _height = image.Height;
                 var data = image.LockBits(
-                    new Rectangle(0, 0, image.Width, image.Height),
-                    ImageLockMode.ReadOnly,
+                    new Rectangle(0, 0, _width, _height),
+                    ImageLockMode.ReadWrite,
                     System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
                 // Now that our pixels are prepared, it's time to generate a texture. We do this with GL.TexImage2D
@@ -51,8 +65,8 @@ namespace OpenGLHelper
                 GL.TexImage2D(TextureTarget.Texture2D,
                     0,
                     PixelInternalFormat.Rgba,
-                    image.Width,
-                    image.Height,
+                    _width,
+                    _height,
                     0,
                     PixelFormat.Bgra,
                     PixelType.UnsignedByte,
@@ -71,8 +85,8 @@ namespace OpenGLHelper
 
             // Now, set the wrapping mode. S is for the X axis, and T is for the Y axis.
             // We set this to Repeat so that textures will repeat when wrapped. Not demonstrated here since the texture coordinates exactly match
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
 
             // Next, generate mipmaps.
             // Mipmaps are smaller copies of the texture, scaled down. Each mipmap level is half the size of the previous one
@@ -91,5 +105,20 @@ namespace OpenGLHelper
             GL.ActiveTexture(unit);
             GL.BindTexture(TextureTarget.Texture2D, Handle);
         }
+
+        public void CopyTexture()
+        {
+            Use();
+            GL.CopyTexImage2D(TextureTarget.Texture2D,
+                0,
+                InternalFormat.Rgba,
+                x: 0,
+                y: 0,
+                width: 1250 * _width/1000,
+                height: 1250 * _height/1000,
+                border: 0);
+            //1465 * _width/1000
+        }
+
     }
 }

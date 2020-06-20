@@ -13,7 +13,7 @@ namespace OpenGL_Training
         Matrix4 trans = Matrix4.CreateTranslation(0.1f, 0.1f, 0.0f);
         private int _vertexBufferObject; 
         private int _colorBufferObject;
-        private int _vertexArrayObject;
+        private int[] _vertexArrayObject = new int[2];
         private int _elementBufferObject;
         private Shader _shader;
         private int location;
@@ -66,8 +66,8 @@ namespace OpenGL_Training
             _shader.SetFloat("blob.RadiusInner", 0.05f);
             _shader.SetFloat("blob.RadiusOuter", 0.15f);
 
-            _vertexArrayObject = GL.GenVertexArray();
-            GL.BindVertexArray(_vertexArrayObject);
+            _vertexArrayObject[0] = GL.GenVertexArray();
+            GL.BindVertexArray(_vertexArrayObject[0]);
 
             ///GL.EnableVertexAttribArray(0);
             //GL.EnableVertexAttribArray(1);
@@ -104,7 +104,7 @@ namespace OpenGL_Training
 
             _rotation = Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(_angle));
             _shader.SetMatrix4("RotationMatrix", _rotation);
-            GL.BindVertexArray(_vertexArrayObject);
+            GL.BindVertexArray(_vertexArrayObject[0]);
             GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
             //GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 
@@ -129,7 +129,7 @@ namespace OpenGL_Training
             GL.DeleteBuffer(_vertexBufferObject);
             GL.DeleteBuffer(_colorBufferObject);
             GL.DeleteBuffer(_elementBufferObject);
-            GL.DeleteVertexArray(_vertexArrayObject);
+            GL.DeleteVertexArray(_vertexArrayObject[0]);
 
             _shader.Handle.Delete();
             base.OnUnload(e);

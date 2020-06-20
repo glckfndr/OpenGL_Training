@@ -18,6 +18,9 @@ namespace Mesh_Manipulation
         int _elementBufferObject;
         int _vertexArrayObject;
         int _vertexBufferObject;
+        private Matrix4 _view;
+        private Matrix4 _projection;
+
         (float[] vertices, uint[] indices) plain;
         float time = 0.0f;
 
@@ -57,6 +60,8 @@ namespace Mesh_Manipulation
                 case "t":
                     _shader.Use();
                     _shader.SetFloat("Time", time);
+                    var model = Matrix4.Identity * Matrix4.CreateRotationY((float)MathHelper.DegreesToRadians(time*10));
+                    _shader.SetMatrix4("model", model);
                     GL.BindVertexArray(_vertexArrayObject);
                     GL.DrawElements(PrimitiveType.Triangles, plain.indices.Length, DrawElementsType.UnsignedInt, 0);
 
@@ -84,43 +89,27 @@ namespace Mesh_Manipulation
         protected override void OnLoad(EventArgs e)
         {
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+            
             plain = Mesh.PlainXY(new Vector3(0, 0, 0), 2.0f, 0.1f, 200, 200);
 
             _shader = new Shader("../../shader.vert", "../../shader.frag");
 
             _shader.SetFloat("Velocity", 0.04f);
-            _shader.SetFloat("Amp", 0.6f);
+            _shader.SetFloat("Amp", 0.3f);
+            _shader.SetFloat("Freq", 2.0f);
+            
+            _view = Matrix4.CreateTranslation(0.0f, 0.0f, -3.0f);
+            _shader.SetMatrix4("view", _view);
+
+            _projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45f), Width / (float)Height, 0.1f, 100.0f);
+            _shader.SetMatrix4("projection", _projection);
 
             _vertexArrayObject = GL.GenVertexArray();
             GL.BindVertexArray(_vertexArrayObject);
 
-            //GL.EnableVertexAttribArray(0);
-            
             _vertexBufferObject = CopyData.ToArrayBuffer(plain.vertices, _shader, "VertexPosition", 3);
-            //_colorBufferObject = CopyData.ToArrayBuffer(colorData, 1);
             _elementBufferObject = CopyData.ToElementBuffer(plain.indices);
             
-            
-
-            ////uniform mat4 ModelViewMatrix;
-            //shader.SetMatrix4("ModelViewMatrix",
-            //    new Matrix4(new Vector4(1, 0, 0, 0),
-            //                new Vector4(0, 1, 0, 0),
-            //                new Vector4(0, 0, 1, 0),
-            //                new Vector4(0, 0, 0, 1)));
-            ////uniform mat3 NormalMatrix;
-            //shader.SetMatrix3("NormalMatrix", new Matrix3(
-            //                new Vector3(1, 0, 0),
-            //                new Vector3(0, 1, 0),
-            //                new Vector3(0, 1, 1)));
-            ////uniform mat4 MVP;
-            //shader.SetMatrix4("MVP",
-            //    new Matrix4(new Vector4(1, 0, 0, 0),
-            //                new Vector4(0, 1, 0, 0),
-            //                new Vector4(0, 0, 1, 0),
-            //                new Vector4(0, 0, 0, 1)));
-
-
             ////uniform vec4 LightPosition;
             //shader.SetVector4("LightPosition", new Vector4(0, 3, 1, 0));
             ////uniform vec3 LightIntensity;
@@ -148,10 +137,7 @@ namespace Mesh_Manipulation
             GL.DeleteBuffer(_vertexBufferObject);
             GL.DeleteBuffer(_elementBufferObject);
             GL.DeleteVertexArray(_vertexArrayObject);
-
-
             _shader.Handle.Delete();
-
             base.OnUnload(e);
         }
     }

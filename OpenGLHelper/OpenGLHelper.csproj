@@ -50,6 +50,7 @@
     <Compile Include="ProgramHandle.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Shader.cs" />
+    <Compile Include="ShapeGL.cs" />
     <Compile Include="Texture.cs" />
   </ItemGroup>
   <ItemGroup>
