@@ -22,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -38,6 +39,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -55,10 +57,10 @@
     <None Include="App.config" />
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
-    <None Include="shader.frag" />
-    <None Include="shader.vert" />
-    <None Include="Shaders\shader.frag" />
-    <None Include="Shaders\shader.vert" />
+    <None Include="Shaders\textureShader.frag" />
+    <None Include="Shaders\textureShader.vert" />
+    <None Include="Shaders\colorShader.frag" />
+    <None Include="Shaders\colorShader.vert" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OpenGLHelper\OpenGLHelper.csproj">
@@ -69,6 +71,8 @@
   <ItemGroup />
   <ItemGroup>
     <Content Include="Resources\container.png" />
+    <Content Include="Resources\water.jpg" />
+    <Content Include="Resources\water2.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -23,9 +23,10 @@ namespace Texture_Manipulation
 
         public Vector3 velocity(Vector3 r)
         {
-            float r2 = Vector3.Dot(r - _center, r - _center);
+            var delta = r - _center;
+            float r2 = Vector3.Dot(delta, delta);
             if (r2 < _rankine2) r2 = _rankine2;
-            return Vector3.Cross(r - _center, _gamma) / r2;
+            return Vector3.Cross(delta, _gamma) / r2;
         }
 
         public Vector3 GetCenter(float dt, Vector3 velocity)

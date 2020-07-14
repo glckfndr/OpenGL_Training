@@ -2,7 +2,7 @@
 using OpenGLHelper;
 using OpenTK;
 using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL;
+using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 
 namespace OpenGL_Training
@@ -11,10 +11,10 @@ namespace OpenGL_Training
     {
         private Matrix4 _rotation;
         Matrix4 trans = Matrix4.CreateTranslation(0.1f, 0.1f, 0.0f);
-        private int _vertexBufferObject; 
-        private int _colorBufferObject;
+        private ArrayBuffer _vertexBufferObject; 
+        private ArrayBuffer _colorBufferObject;
         private int[] _vertexArrayObject = new int[2];
-        private int _elementBufferObject;
+        private ArrayBuffer _elementBufferObject;
         private Shader _shader;
         private int location;
 
@@ -71,10 +71,20 @@ namespace OpenGL_Training
 
             ///GL.EnableVertexAttribArray(0);
             //GL.EnableVertexAttribArray(1);
+            _vertexBufferObject = new ArrayBuffer(BufferUsageHint.StaticDraw);
+            _vertexBufferObject.SetData(verticesData);
+            _vertexBufferObject.SetAttribPointer(_shader, "VertexPosition", 3);
+            //  _vertexBufferObject = CopyData.ToArrayBuffer(verticesData, _shader, "VertexPosition",3,0);
 
-            _vertexBufferObject = CopyData.ToArrayBuffer(verticesData, _shader, "VertexPosition",3);
-            _colorBufferObject = CopyData.ToArrayBuffer(colorData, _shader, "VertexColor", 3);
-            _elementBufferObject = CopyData.ToElementBuffer(_indices);
+            _colorBufferObject = new ArrayBuffer(BufferUsageHint.StaticDraw);
+            _colorBufferObject.SetData(colorData);
+            _colorBufferObject.SetAttribPointer(_shader, "VertexColor", 3);
+
+            //_colorBufferObject = CopyData.ToArrayBuffer(colorData, _shader, "VertexColor", 3,0);
+            _elementBufferObject = new ArrayBuffer(BufferUsageHint.StaticDraw, BufferTarget.ElementArrayBuffer);
+            _elementBufferObject.SetData(_indices);
+
+            //_elementBufferObject = CopyData.ToElementBuffer(_indices);
             
             
             
@@ -126,9 +136,12 @@ namespace OpenGL_Training
             GL.UseProgram(0);
 
             // Delete all the resources.
-            GL.DeleteBuffer(_vertexBufferObject);
-            GL.DeleteBuffer(_colorBufferObject);
-            GL.DeleteBuffer(_elementBufferObject);
+            //GL.DeleteBuffer(_vertexBufferObject);
+            _vertexBufferObject.Destroy();
+            //GL.DeleteBuffer(_colorBufferObject);
+            _colorBufferObject.Destroy();
+            //GL.DeleteBuffer(_elementBufferObject);
+            _elementBufferObject.Destroy();
             GL.DeleteVertexArray(_vertexArrayObject[0]);
 
             _shader.Handle.Delete();

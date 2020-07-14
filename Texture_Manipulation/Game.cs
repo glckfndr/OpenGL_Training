@@ -4,14 +4,15 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 using System;
-using System.Threading;
+using System.Drawing;
 
 namespace Texture_Manipulation
 {
     public class Game : GameWindow
     {
         private string _type = "t";
-        private Shader[] _shader = new Shader[2];
+        private Shader _textureShader;
+        private Shader _colorShader;
         private int[] _elementBufferObject = new int[2];
         private int[] _vertexArrayObject = new int[2];
         private int[] _vertexBufferObject = new int[2];
@@ -20,26 +21,58 @@ namespace Texture_Manipulation
         private (float[] vertices, uint[] indices) plain;
         private (float[] vertices, uint[] indices) triangle;
         private float time = 0.0f;
-        private ShapeGL trn;
-        private ShapeGL trn1;
-        private ShapeGL txtr;
-        private Vector3 _center0 = new Vector3(0.5f,0.0f, 0);
-        private Vector3 _center1 = new Vector3(-0.5f, 0.0f, 0);
+        private VertexObject _colorTriangle1;
+        private VertexObject _colorTriangle2;
+        private VertexObject _textureRectangle;
+        private Vector3 _center0 = new Vector3(0.15f, -1.0f, 0);
+        private Vector3 _center1 = new Vector3(-0.15f, -1.0f, 0);
         private Vortex vortex0;
         private Vortex vortex1;
-
-
-        float[] colorData =
+        private float[] colorData =
         {
             1.0f, 0.0f, 1.0f,
             1.0f, 1.0f, 0.0f,
             0.0f, 1.0f, 1.0f,
-          
+
         };
+
+        private Point _mouse;
+        private float _gamma = 0.03f;
+
+        private bool _isTriangle = false;
 
         public Game(int width, int height, string title) :
             base(width, height, GraphicsMode.Default, title)
         {
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            vortex0 = new Vortex(_center0, new Vector3(0, 0, _gamma));
+            vortex1 = new Vortex(_center1, new Vector3(0, 0, -_gamma));
+            GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+            _texture = new Texture("../../Resources/water2.jpg");
+            this.ClientSize = _texture.GetSize();
+
+            _textureShader = new Shader("../../Shaders/textureShader.vert", "../../Shaders/textureShader.frag");
+            _textureShader.Use();
+            _textureShader.SetFloat("gamma", _gamma);
+
+            plain = Mesh.PlainXYUV(new Vector3(0, 0, 0), 2.0f, 2.0f, 64, 64);
+            _textureRectangle = new VertexObject(_textureShader, plain, _texture);
+
+            _colorShader = new Shader("../../Shaders/colorShader.vert", "../../Shaders/colorShader.frag");
+
+            triangle = Mesh.TriangleXYUV(new Vector2(0.0f, 0.0f), 0.75f);
+            _colorTriangle1 = new VertexObject(_colorShader, triangle, colorData);
+
+            triangle = Mesh.TriangleXYUV(new Vector2(0.5f, -0.1f), 0.25f);
+            colorData[3] = 1;
+            colorData[4] = 0;
+            colorData[5] = 0;
+            _colorTriangle2 = new VertexObject(_colorShader, triangle, colorData);
+
+            base.OnLoad(e);
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -60,63 +93,67 @@ namespace Texture_Manipulation
                 _type = "r";
 
             }
-            
+
             base.OnUpdateFrame(e);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             GL.Clear(ClearBufferMask.ColorBufferBit);
-            float dt = 0.03f;
+            ;
+            float dt = 0.01f; //1.0f/ (float)this.RenderFrequency;
             time += dt;
             _center0 = vortex0.GetCenter(dt, vortex1.velocity(_center0));
             _center1 = vortex1.GetCenter(dt, vortex0.velocity(_center1));
 
 
+            _textureShader.SetVector3("center0", _center0);
+            _textureShader.SetVector3("center1", _center1);
+            _textureShader.SetFloat("dt", dt);
 
+            _textureRectangle.Draw();
             switch (_type)
             {
 
                 case "t":
                     
-                    //_texture.Use();
-                    //_shader[0].Use();
 
-                    _shader[0].SetVector3("center0", _center0);
-                    _shader[0].SetVector3("center1", _center1);
-
-                    //_shader.SetFloat("Time", time);
-                    //GL.BindVertexArray(_vertexArrayObject[0]);
-                    //GL.DrawElements(PrimitiveType.Triangles, plain.indices.Length, DrawElementsType.UnsignedInt, 0);
-                    txtr.Use();
-
-                    // _shader[1].Use();
-                    // GL.BindVertexArray(_vertexArrayObject[1]);
-                    // GL.DrawElements(PrimitiveType.Triangles, triangle.indices.Length, DrawElementsType.UnsignedInt, 0);
-                    _shader[1].SetFloat("yCoord", 0.5f * (float)Math.Cos(2 * time));
-                    trn.Use();
-
-                    _shader[1].SetFloat("yCoord", 0.5f*(float)Math.Sin(2*time));
-                    trn1.Use();
+                    if (_isTriangle)
+                    {
+                        //_colorShader.SetFloat("yCoord", 0.5f * (float)Math.Cos(2 * time));
+                        _colorShader.SetFloat("yCoord", -1.0f + 2.0f*(1.0f -((float)_mouse.Y)/ClientSize.Height));
+                        _colorShader.SetFloat("xCoord", -1.0f + 2.0f * ((float)_mouse.X / ClientSize.Width));
+                        _colorTriangle1.Draw();
+                        _isTriangle = false;
+                    }
+                    
+                //    _colorShader.SetFloat("yCoord", 0.5f * (float)Math.Sin(2 * time));
+                //    _colorShader.SetFloat("xCoord",0.0f);
+                //    _colorTriangle2.Draw();
 
                     break;
                 case "r":
-                    //_texture.Use();
-                    //_shader[0].Use();
-                    //_shader[0].SetFloat("Time", time);
-                    _shader[0].SetVector3("center0", _center0);
-                    _shader[0].SetVector3("center1", _center1);
-                    //GL.BindVertexArray(_vertexArrayObject[0]);
-                    //GL.DrawElements(PrimitiveType.Triangles, plain.indices.Length, DrawElementsType.UnsignedInt, 0);
-                    txtr.Use();
+                    
 
                     break;
             }
 
-            _texture.CopyTexture();
-           // Thread.Sleep(500);
+            _texture.Copy();
+            // Thread.Sleep(500);
             Context.SwapBuffers();
             base.OnRenderFrame(e);
+        }
+
+        protected override void OnMouseDown(MouseButtonEventArgs e)
+        {
+            if (Focused)
+            {
+                _isTriangle = true;
+                _mouse = e.Position;
+                //Mouse.SetPosition(X + Width / 2f, Y + Height / 2f);
+            }
+
+            base.OnMouseDown(e);
         }
 
         protected override void OnResize(EventArgs e)
@@ -125,48 +162,7 @@ namespace Texture_Manipulation
             base.OnResize(e);
         }
 
-        protected override void OnLoad(EventArgs e)
-        {
-            vortex0 = new Vortex(_center0, new Vector3(0,0,0.04f) );
-            vortex1 = new Vortex(_center1, new Vector3(0, 0, -0.04f));
-            GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-            _texture = new Texture("../../Resources/container.png");
-            //_texture.Use();
-
-            _shader[0] = new Shader("../../shader.vert", "../../shader.frag");
-            _shader[0].Use();
-
-            plain = Mesh.PlainXYUV(new Vector3(0, 0, 0), 2.0f, 2.0f, 32, 32);
-
-           // _vertexArrayObject[0] = GL.GenVertexArray();
-           // GL.BindVertexArray(_vertexArrayObject[0]);
-
-            //string[] names = { "VertexPosition", "TexturePosition" };
-            //int[] size = { 3, 2 };
-            //_vertexBufferObject[0] = CopyData.ToArrayBufferForTexture(plain.vertices, _shader[0], names, size);
-            //_elementBufferObject[0] = CopyData.ToElementBuffer(plain.indices);
-            txtr = new ShapeGL(_shader[0], plain, _texture);
-
-            _shader[1] = new Shader("../../Shaders/shader.vert", "../../Shaders/shader.frag");
-            //_shader[1].Use();
-
-            triangle = Mesh.TriangleXYUV(new Vector2(-0.5f, -0.1f), 0.25f);
-            trn = new ShapeGL(_shader[1], triangle, colorData);
-
-            triangle = Mesh.TriangleXYUV(new Vector2(0.5f, -0.1f), 0.25f);
-            colorData[3] = 1;
-            colorData[4] = 0;
-            colorData[5] = 0;
-            trn1 = new ShapeGL(_shader[1], triangle, colorData);
-            //_vertexArrayObject[1] = GL.GenVertexArray();
-            //GL.BindVertexArray(_vertexArrayObject[1]);
-            //_vertexBufferObject[1] = CopyData.ToArrayBufferForTexture(triangle.vertices, _shader[1], "VertexPosition", 3);
-            //_colorBufferObject = CopyData.ToArrayBufferForTexture(colorData, _shader[1], "VertexColor", 3);
-            //_elementBufferObject[1] = CopyData.ToElementBuffer(triangle.indices);
-
-
-            base.OnLoad(e);
-        }
+        
 
         protected override void OnUnload(EventArgs e)
         {
@@ -175,18 +171,13 @@ namespace Texture_Manipulation
             GL.BindVertexArray(0);
             GL.UseProgram(0);
 
-            //GL.DeleteBuffer(_vertexBufferObject[0]);
-            //GL.DeleteBuffer(_elementBufferObject[0]);
-            //GL.DeleteBuffer(_vertexBufferObject[1]);
-            //GL.DeleteBuffer(_elementBufferObject[1]);
-            //GL.DeleteVertexArray(_vertexArrayObject[0]);
-            //GL.DeleteVertexArray(_vertexArrayObject[1]);
-            trn.DeleteBuffers();
-            txtr.DeleteBuffers();
+            _colorTriangle1.DeleteBuffers();
+            _colorTriangle2.DeleteBuffers();
+            _textureRectangle.DeleteBuffers();
 
-            
-            _shader[0].Handle.Delete();
-            _shader[1].Handle.Delete();
+
+            _textureShader.Handle.Delete();
+            _colorShader.Handle.Delete();
 
             base.OnUnload(e);
         }

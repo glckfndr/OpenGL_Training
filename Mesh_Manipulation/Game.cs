@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using GlmNet;
 using OpenGLHelper;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
+using System;
 
 namespace Mesh_Manipulation
 {
@@ -15,18 +12,98 @@ namespace Mesh_Manipulation
     {
         private string _type = "t";
         private Shader _shader;
-        int _elementBufferObject;
-        int _vertexArrayObject;
-        int _vertexBufferObject;
-        private Matrix4 _view;
-        private Matrix4 _projection;
-
-        (float[] vertices, uint[] indices) plain;
-        float time = 0.0f;
+        private ArrayBuffer _elementBufferObject;
+        private int _vertexArrayObject;
+        //private int _vertexBufferObject;
+        private ArrayBuffer _vertexBufferObject;
+        private mat4 _view;
+        private mat4 _model;
+        private mat4 _projection;
+        //private (float[] vertices, uint[] indices) plain;
+        private float time = 0.0f;
+        private float _angle = 0.0f;
+        private Plane _plane;
 
         public Game(int width, int height, string title) :
             base(width, height, GraphicsMode.Default, title)
         {
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            GL.ClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+            GL.Enable(EnableCap.DepthTest);
+
+            //  plain = Mesh.PlainXY(new Vector3(0, 0, 0), 12.0f, 0.1f, 200, 200);
+            _plane = new Plane(13.0f, 10.0f, 200, 200);
+
+            _shader = new Shader("../../shader.vert", "../../shader.frag");
+
+            _shader.SetVector3("Material.Kd", new Vector3(0.9f, 0.5f, 0.3f));
+            _shader.SetVector3("Material.Ks", new Vector3(0.8f, 0.8f, 0.8f));
+            _shader.SetVector3("Material.Ka", new Vector3(0.2f, 0.2f, 0.2f));
+            _shader.SetFloat("Material.Shininess", 100.0f);
+
+            _shader.SetVector3("Light.Intensity", new Vector3(1.0f, 1.0f, 1.0f));
+            _shader.SetVector4("Light.Position", new Vector4(0.0f, 2.0f, 0.0f, 1));
+            _angle = (float)Math.PI / 2;
+
+            _shader.SetFloat("Velocity", 0.08f);
+            _shader.SetFloat("Amp", 0.5f);
+            _shader.SetFloat("Freq", 2.0f);
+
+            //_vertexArrayObject = GL.GenVertexArray();
+            //GL.BindVertexArray(_vertexArrayObject);
+
+            //_vertexBufferObject = new ArrayBuffer(BufferUsageHint.StaticDraw);
+            //_vertexBufferObject.SetData(plain.vertices);
+            //_vertexBufferObject.SetAttribPointer(_shader, "VertexPosition", 3, 0);
+
+            //_elementBufferObject = new ArrayBuffer(BufferUsageHint.StaticDraw, BufferTarget.ElementArrayBuffer);
+            //_elementBufferObject.SetData(plain.indices);
+
+            //GL.BindVertexArray(0);
+
+            base.OnLoad(e);
+        }
+
+
+
+        protected override void OnRenderFrame(FrameEventArgs e)
+        {
+            // GL.Clear(ClearBufferMask.ColorBufferBit);
+            time += 0.5f;
+            switch (_type)
+            {
+
+                case "t":
+                    GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                    _shader.SetFloat("Time", time);
+                    _view = glm.lookAt(new vec3(10.0f * glm.cos(_angle), 4.0f, 10.0f * glm.sin(_angle)),
+                                   new vec3(0.0f, 0.0f, 0.0f), new vec3(0.0f, 1.0f, 0.0f));
+                    _projection = glm.perspective(glm.radians(60.0f), (float)Width / Height, 0.3f, 100.0f);
+                    _model = new mat4(1.0f);
+                    _model = glm.rotate(_model, glm.radians(-10.0f), new vec3(0.0f, 0.0f, 1.0f));
+                    _model = glm.rotate(_model, glm.radians(50.0f), new vec3(1.0f, 0.0f, 0.0f));
+                    SetMatrices();
+                    _plane.Render();
+                    //GL.BindVertexArray(_vertexArrayObject);
+                    //GL.DrawElements(PrimitiveType.Triangles, plain.indices.Length, 
+                    //  DrawElementsType.UnsignedInt, 0);
+
+                    break;
+                case "r":
+                    //_shader.Use();
+                    //_shader.SetFloat("Time", time);
+                    //GL.BindVertexArray(_vertexArrayObject);
+                    //GL.DrawElements(PrimitiveType.Triangles, plain.indices.Length, DrawElementsType.UnsignedInt, 0);
+
+                    break;
+
+            }
+
+            Context.SwapBuffers();
+            base.OnRenderFrame(e);
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -50,82 +127,23 @@ namespace Mesh_Manipulation
             base.OnUpdateFrame(e);
         }
 
-        protected override void OnRenderFrame(FrameEventArgs e)
-        {
-            GL.Clear(ClearBufferMask.ColorBufferBit);
-            time += 0.03f;
-            switch (_type)
-            {
-
-                case "t":
-                    _shader.Use();
-                    _shader.SetFloat("Time", time);
-                    var model = Matrix4.Identity * Matrix4.CreateRotationY((float)MathHelper.DegreesToRadians(time*10));
-                    _shader.SetMatrix4("model", model);
-                    GL.BindVertexArray(_vertexArrayObject);
-                    GL.DrawElements(PrimitiveType.Triangles, plain.indices.Length, DrawElementsType.UnsignedInt, 0);
-
-                    break;
-                case "r":
-                    _shader.Use();
-                    _shader.SetFloat("Time", time);
-                    GL.BindVertexArray(_vertexArrayObject);
-                    GL.DrawElements(PrimitiveType.Triangles, plain.indices.Length, DrawElementsType.UnsignedInt, 0);
-
-                    break;
-
-            }
-
-            Context.SwapBuffers();
-            base.OnRenderFrame(e);
-        }
-
         protected override void OnResize(EventArgs e)
         {
             GL.Viewport(0, 0, Width, Height);
+            _projection = glm.perspective(glm.radians(60.0f), (float)Width / Height, 0.3f, 100.0f);
             base.OnResize(e);
         }
 
-        protected override void OnLoad(EventArgs e)
+
+
+        private void SetMatrices()
         {
-            GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-            
-            plain = Mesh.PlainXY(new Vector3(0, 0, 0), 2.0f, 0.1f, 200, 200);
-
-            _shader = new Shader("../../shader.vert", "../../shader.frag");
-
-            _shader.SetFloat("Velocity", 0.04f);
-            _shader.SetFloat("Amp", 0.3f);
-            _shader.SetFloat("Freq", 2.0f);
-            
-            _view = Matrix4.CreateTranslation(0.0f, 0.0f, -3.0f);
-            _shader.SetMatrix4("view", _view);
-
-            _projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45f), Width / (float)Height, 0.1f, 100.0f);
-            _shader.SetMatrix4("projection", _projection);
-
-            _vertexArrayObject = GL.GenVertexArray();
-            GL.BindVertexArray(_vertexArrayObject);
-
-            _vertexBufferObject = CopyData.ToArrayBuffer(plain.vertices, _shader, "VertexPosition", 3);
-            _elementBufferObject = CopyData.ToElementBuffer(plain.indices);
-            
-            ////uniform vec4 LightPosition;
-            //shader.SetVector4("LightPosition", new Vector4(0, 3, 1, 0));
-            ////uniform vec3 LightIntensity;
-            //shader.SetVector3("LightIntensity", new Vector3(1, 1, 1));
-            ////uniform vec3 Kd; // коеф відбиття розсіяного світла
-            //shader.SetVector3("Kd", new Vector3(0.4f, 0.4f, 0.4f));
-            ////uniform vec3 Ka; // коеф відбиття розсіяного світла
-            //shader.SetVector3("Ka", new Vector3(0.4f, 0.4f, 0.4f));
-            ////uniform vec3 Ks; // коеф зеркального відбиття
-            //shader.SetVector3("Ks", new Vector3(0.4f, 0.4f, 0.4f));
-            ////uniform float Shininess; // показник ступеня зеркального відбиття
-            //shader.SetFloat("Shininess", 0.5f);
-            
-
-            base.OnLoad(e);
+            mat4 mv = _view  * _model   ;
+            _shader.SetMatrix4("ModelViewMatrix", mv.ConvertToMatrix4());
+            _shader.SetMatrix3("NormalMatrix", (new mat3(new vec3(mv[0]), new vec3(mv[1]), new vec3(mv[2]))).ConvertToMatrix3());
+            _shader.SetMatrix4("MVP", (_projection * mv).ConvertToMatrix4());
         }
+
 
         protected override void OnUnload(EventArgs e)
         {
@@ -133,10 +151,11 @@ namespace Mesh_Manipulation
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
             GL.BindVertexArray(0);
             GL.UseProgram(0);
-
-            GL.DeleteBuffer(_vertexBufferObject);
-            GL.DeleteBuffer(_elementBufferObject);
-            GL.DeleteVertexArray(_vertexArrayObject);
+            _plane.DeleteBuffers();
+            //GL.DeleteBuffer(_vertexBufferObject);
+            // _vertexBufferObject.Destroy();
+            // _elementBufferObject?.Destroy();
+            // GL.DeleteVertexArray(_vertexArrayObject);
             _shader.Handle.Delete();
             base.OnUnload(e);
         }
