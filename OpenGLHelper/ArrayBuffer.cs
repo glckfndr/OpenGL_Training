@@ -17,8 +17,12 @@ namespace OpenGLHelper
             _usage = usage;
             _target = target;
             _ok = false;
-            
+
             Create();
+            if (!_ok)
+            {
+                throw new Exception("Cant create ArrayBuffer!");
+            }
         }
 
         //ArrayBuffer:: ~ArrayBuffer()
@@ -39,13 +43,14 @@ namespace OpenGLHelper
         private bool Create()
         {
             _id = GL.GenBuffer();
-
-            return _ok = (GL.IsBuffer(_id) == true);
+            Bind();
+            return _ok = GL.IsBuffer(_id);
         }
 
         public void Bind()
         {
             GL.BindBuffer(_target, _id);
+            // var res = GL.IsBuffer(_id);
         }
 
         public void Unbind()
@@ -88,7 +93,7 @@ namespace OpenGLHelper
 
         public void SetAttribPointer(int index, int numberOfComponent, int stride = 0, int offset = 0, bool normalized = false, VertexAttribPointerType type = VertexAttribPointerType.Float)
         {
-            
+
             Bind();
             GL.VertexAttribPointer(index,                    // index
                                 numberOfComponent,          // number of values per vertex
@@ -100,7 +105,7 @@ namespace OpenGLHelper
             GL.EnableVertexAttribArray(index);
         }
 
-        public void SetAttribPointer(Shader shader, string attributeName, int numberOfComponent, int stride = 0, int offset = 0, 
+        public void SetAttribPointer(Shader shader, string attributeName, int numberOfComponent, int stride = 0, int offset = 0,
                                         bool normalized = false, VertexAttribPointerType type = VertexAttribPointerType.Float)
         {
             Bind();
@@ -116,9 +121,9 @@ namespace OpenGLHelper
 
         }
 
-        public void SetAttribPointer(Shader shader,string[] attributeName,int[] dataSize)
+        public void SetAttribPointer(Shader shader, string[] attributeName, int[] dataSize)
         {
-            //Bind();
+            Bind();
             int stride = 0;
             foreach (var len in dataSize)
             {
@@ -153,7 +158,10 @@ namespace OpenGLHelper
             GL.BufferData(_target, 0, IntPtr.Zero, 0 /*usage*/ );
         }
 
-
+        public int GetId()
+        {
+            return _id;
+        }
         //bool IsSupported()
         //{
         //    return  GLEW_ARB_vertex_buffer_object != 0;

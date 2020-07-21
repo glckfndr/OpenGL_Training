@@ -10,18 +10,15 @@ out vec2 TexCoord;
 
 //uniform mat4 ModelViewMatrix;
 uniform mat3 NormalMatrix;
-//uniform mat4 MVP;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
 void main()
 {
-    Normal = normalize( NormalMatrix * VertexNormal);
-    //Position = vec3( ModelViewMatrix * vec4(VertexPosition,1.0) );
-	Position = vec3(   view * model * vec4(VertexPosition,1.0)  );
+    Normal = normalize(NormalMatrix * VertexNormal);
+    Position = vec3( view * model * vec4(VertexPosition,1.0));
     TexCoord = VTexCoord;
 
-    //gl_Position = vec4(VertexPosition,1.0) * MVP ;
-	gl_Position = projection  *  view * model * vec4(VertexPosition, 1.0) ;
+    gl_Position = projection * view * model * vec4(VertexPosition,1.0) ;
 }

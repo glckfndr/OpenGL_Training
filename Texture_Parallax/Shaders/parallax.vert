@@ -22,8 +22,8 @@ uniform mat4 MVP;
 void main()
 {
     // Transform normal and tangent to eye space
-    vec3 norm = normalize(  VertexNormal * NormalMatrix );
-    vec3 tang = normalize( VertexTangent.xyz * NormalMatrix);
+    vec3 norm = normalize(  NormalMatrix * VertexNormal  );
+    vec3 tang = normalize( NormalMatrix * VertexTangent.xyz );
 
     // Compute the binormal
     vec3 binormal = normalize( cross( norm, tang ) );
@@ -32,10 +32,10 @@ void main()
     mat3 toObjectLocal = transpose( mat3( tang, binormal, norm ) );
 
     // Transform light direction and view direction to tangent space
-    vec3 pos = vec3( vec4(VertexPosition,1.0) * ModelViewMatrix  );
+    vec3 pos = vec3( ModelViewMatrix * vec4(VertexPosition,1.0)   );
     LightDir = normalize( toObjectLocal * (Light.Position.xyz - pos) );
     ViewDir = toObjectLocal * normalize(-pos);
     TexCoord = VertexTexCoord;
 
-    gl_Position =  vec4(VertexPosition,1.0) * MVP ;
+    gl_Position =  MVP * vec4(VertexPosition,1.0)  ;
 }

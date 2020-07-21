@@ -16,8 +16,8 @@ uniform mat4 MVP;
 void main()
 {
     TexCoord = VertexTexCoord;
-    Normal = normalize(  VertexNormal * NormalMatrix );
-    Position = vec3(  vec4(VertexPosition,1.0) * ModelViewMatrix );
+    Normal = normalize(  NormalMatrix * VertexNormal  );
+    Position = vec3(  ModelViewMatrix * vec4(VertexPosition,1.0)  );
 
-    gl_Position =  vec4(VertexPosition,1.0) * MVP;
+    gl_Position =  MVP * vec4(VertexPosition,1.0) ;
 }

@@ -46,9 +46,5 @@ namespace OpenGLHelper
             Bind(index);
             GL.BufferData(BufferTarget.ShaderStorageBuffer, sizeInByte, IntPtr.Zero, _usage);
         }
-
-
-
-
     }
 }

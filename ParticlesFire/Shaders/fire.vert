@@ -57,7 +57,7 @@ void render()
     Transp = 0.0;
     if( Time >= VertexStartTime )
         Transp = 1.0 - age / ParticleLifetime;
-    gl_Position = vec4(VertexPosition, 1.0) * MVP ;
+    gl_Position = MVP * vec4(VertexPosition, 1.0)  ;
 }
 
 void main()

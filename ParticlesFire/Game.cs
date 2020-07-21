@@ -82,7 +82,7 @@ namespace ParticlesFire
             GL.ActiveTexture(TextureUnit.Texture0);
             var tex = Texture.LoadTexture(texName);
 
-            _prog.Use();
+           // _prog.Use();
             _prog.SetInt("ParticleTex", 0);
             _prog.SetFloat("ParticleLifetime", 4.0f);
             _prog.SetVector3("Accel", new Vector3(0.0f, 0.1f, 0.0f));

@@ -30,6 +30,7 @@ namespace ComputeShader4
         private FrameBuffer _fbo;
         private Torus _torus;
         private TeaPot _teapot;
+        private Sphere _sphere;
         private float angle = 0;
         private float tPrev = 0;
         private float rotSpeed = ((float)Math.PI / 4.0f);
@@ -51,6 +52,7 @@ namespace ComputeShader4
             _plane = new Plane(50.0f, 50.0f, 1, 1);
             _teapot = new TeaPot(28, new mat4(1));
             _torus = new Torus(0.7f * 1.5f, 0.3f * 1.5f, 50, 50);
+            _sphere = new Sphere(0.75f,32,32);
 
             _projection = new mat4(1.0f);
             _angle = (float)Math.PI / 2;
@@ -70,7 +72,7 @@ namespace ComputeShader4
             };
 
             // Set up the _buffers
-            ArrayBuffer[] handle = new ArrayBuffer[2];
+            
             //GL.GenBuffers(2, handle);
 
             //GL.BindBuffer(BufferTarget.ArrayBuffer, handle[0]);
@@ -85,7 +87,7 @@ namespace ComputeShader4
             fsQuad = new VertexArray();//GL.GenVertexArray();
             //GL.BindVertexArray(fsQuad);
             fsQuad.Bind();
-
+            ArrayBuffer[] handle = new ArrayBuffer[2];
             handle[0] = new ArrayBuffer(BufferUsageHint.StaticDraw);
             handle[0].SetData(verts);
             handle[0].SetAttribPointer(0, 3);
@@ -170,6 +172,7 @@ namespace ComputeShader4
                     pass1();
                     _computeShader.Compute(MemoryBarrierFlags.ShaderImageAccessBarrierBit, Width / 25, Height / 25, 1);
                     _shader.Use();
+                    _fbo.UnBind();
                     pass2();
 
                     break;
@@ -253,11 +256,26 @@ namespace ComputeShader4
             _model = glm.rotate(_model, glm.radians(90.0f), new vec3(1.0f, 0.0f, 0.0f));
             SetMatrices();
             _torus.Render();
+
+
+            _shader.SetVector4("Light.Position", new Vector4(3.0f, 3.0f, 3.0f, 1.0f));
+            _shader.SetVector3("Material.Kd", new Vector3(0.5f, 0.5f, 0.2f));
+            _shader.SetVector3("Material.Ks", new Vector3(0.95f, 0.0f, 0.95f));
+            _shader.SetVector3("Material.Ka", new Vector3(0.1f, 0.2f, 0.1f));
+            _shader.SetFloat("Material.Shininess", 10.0f);
+            _model = new mat4(1.0f);
+            _model = glm.translate(_model, new vec3(-2.0f, 1.0f, -2.0f));
+            _model = glm.rotate(_model, glm.radians(90.0f), new vec3(1.0f, 0.0f, 0.0f));
+            SetMatrices();
+            _sphere.Render();
+
+
+
         }
 
         private void pass2()
         {
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            //GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             // GL.UniformSubroutines(ShaderType.FragmentShader, 1, ref pass2Index);

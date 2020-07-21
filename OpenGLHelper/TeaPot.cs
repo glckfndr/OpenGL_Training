@@ -2,7 +2,7 @@
 
 namespace OpenGLHelper
 {
-    public class TeaPot : TriagleMesh
+    public class TeaPot : TriangleMesh
     {
 
         public TeaPot(int grid, mat4 lidTransform)

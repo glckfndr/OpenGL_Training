@@ -7,12 +7,13 @@ using GlmNet;
 
 namespace OpenGLHelper
 {
-    public class Torus: TriagleMesh
+    public class Torus: TriangleMesh
     {
         public Torus(float outerRadius, float innerRadius, int nsides, int nrings)
         {
             int faces = nsides * nrings;
             int nVerts = nsides * (nrings + 1);   // One extra ring to duplicate first ring
+            
 
             // Points
             float[] p = new float[nVerts * 3];
@@ -23,8 +24,8 @@ namespace OpenGLHelper
             
 
             // Generate the vertex data
-            float ringFactor = (float)(Math.PI*2) / nrings;
-            float sideFactor = (float)(Math.PI * 2) / nsides;
+            float ringFactor = _twoPi / nrings;
+            float sideFactor = _twoPi / nsides;
             int idx = 0, tidx = 0;
             for (int ring = 0; ring <= nrings; ring++)
             {
@@ -43,8 +44,8 @@ namespace OpenGLHelper
                     n[idx] = cv * cu * r;
                     n[idx + 1] = cv * su * r;
                     n[idx + 2] = sv * r;
-                    tex[tidx] = u / (float)(Math.PI * 2);
-                    tex[tidx + 1] = v / (float)(Math.PI * 2);
+                    tex[tidx] = u / _twoPi;
+                    tex[tidx + 1] = v / _twoPi;
                     tidx += 2;
                     // Normalize
                     float len = (float)Math.Sqrt(n[idx] * n[idx] + n[idx + 1] * n[idx + 1] + n[idx + 2] * n[idx + 2]);
@@ -75,6 +76,11 @@ namespace OpenGLHelper
             }
 
             InitializeBuffers(el, p, n, tex);
+        }
+
+        public VertexArray GetVao()
+        {
+            return _VAO;
         }
     }
 }

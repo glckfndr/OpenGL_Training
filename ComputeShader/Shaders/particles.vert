@@ -31,6 +31,6 @@ void main()
     }
 
     // Draw at the current position
-    gl_Position =  vec4(pos, 1.0) * MVP ;
-	
+    gl_Position =  MVP * vec4(pos, 1.0)  ;
+
 }

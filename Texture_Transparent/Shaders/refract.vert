@@ -31,12 +31,12 @@ void main()
     } 
 	else 
 	{
-        vec3 worldPos = vec3(vec4(VertexPosition,1.0) * ModelMatrix );
-        vec3 worldNorm = vec3(vec4(VertexNormal, 0.0) * ModelMatrix );
+        vec3 worldPos = vec3(ModelMatrix * vec4(VertexPosition,1.0)  );
+        vec3 worldNorm = vec3(ModelMatrix * vec4(VertexNormal, 0.0)  );
         vec3 worldView = normalize( WorldCameraPosition - worldPos );
 
         ReflectDir = reflect(-worldView, worldNorm );
         RefractDir = refract(-worldView, worldNorm, Material.Eta );
     }
-    gl_Position =  vec4(VertexPosition,1.0) * MVP;
+    gl_Position =  MVP * vec4(VertexPosition,1.0) ;
 }

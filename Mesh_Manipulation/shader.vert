@@ -28,8 +28,8 @@ void main()
     
     vec3 n = normalize(vec3(cos( u ), 1, cos( u )));
 
-    Position = pos * ModelViewMatrix ;
-    Normal = n * NormalMatrix  ;
+    Position = ModelViewMatrix * pos  ;
+    Normal = NormalMatrix * n  ;
     TexCoord = VertexTexCoord;
-    gl_Position =  pos * MVP ;
+    gl_Position =   MVP * pos ;
 }

@@ -9,10 +9,8 @@ namespace OpenGLHelper
         {
             _handle = GL.GenRenderbuffer();
             GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, _handle);
-
             GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer,
-                RenderbufferStorage.DepthComponent,
-                width, height);
+                        RenderbufferStorage.DepthComponent, width, height);
 
 
         }
@@ -21,8 +19,8 @@ namespace OpenGLHelper
         {
             // Bind the depth buffer to the FBO
             GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer,
-                FramebufferAttachment.DepthAttachment,
-                RenderbufferTarget.Renderbuffer, _handle);
+                                        FramebufferAttachment.DepthAttachment,
+                                        RenderbufferTarget.Renderbuffer, _handle);
         }
     }
 }

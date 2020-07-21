@@ -49,14 +49,11 @@ namespace ComputeShader3
 
             cube = new Cube(1.5f);
             _renderShader = new Shader("../../Shaders/ads.vert", "../../Shaders/ads.frag");
-
             _computeShader = new Shader("../../Shaders/mandelbrot.comp");
             InitBuffers();
             //_texture = new Texture("../../Textures/water2.jpg", TextureWrapMode.Repeat);
             //_texture.Use();
             setWindow();
-            
-            
 
             _renderShader.Use();
             _renderShader.SetVector4("LightPosition", new Vector4(0.0f, 0.0f, -1.0f, 1.0f));

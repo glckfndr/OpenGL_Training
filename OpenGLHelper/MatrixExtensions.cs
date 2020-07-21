@@ -12,7 +12,7 @@ namespace OpenGLHelper
             {
                 for (int j = 0; j < 4; j++)
                 {
-                    Mat[i, j] = mat[i, j];
+                    Mat[i, j] = mat[j, i];
                 }
             }
 
@@ -26,7 +26,7 @@ namespace OpenGLHelper
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    Mat[i, j] = mat[i, j];
+                    Mat[i, j] = mat[j, i];
                 }
             }
 
@@ -44,6 +44,26 @@ namespace OpenGLHelper
             }
 
             return vec;
+        }
+
+        public static mat3 InverseTranspose(this mat3  mat)
+        {
+            mat3 inverseMatrix = glm.inverse(mat);
+            return inverseMatrix.Transpose();
+        }
+
+        public static mat3 Transpose(this mat3 mat)
+        {
+            mat3 matrix = new mat3(0);
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    matrix[i, j] = mat[j, i];
+                }
+            }
+
+            return matrix;
         }
     }
 }

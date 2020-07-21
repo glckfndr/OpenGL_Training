@@ -17,8 +17,8 @@ uniform mat4 projection;
 void main()
 {
     Normal = normalize( NormalMatrix * VertexNormal);
-    Position = vec3( vec4(VertexPosition,1.0) *  model * view );
+    Position = vec3( view * model * vec4(VertexPosition, 1.0));
     TexCoord = VTexCoord;
 
-    gl_Position = vec4(VertexPosition,1.0) * model *  view * projection ;
+    gl_Position = projection *  view * model *  vec4(VertexPosition,1.0) ;
 }

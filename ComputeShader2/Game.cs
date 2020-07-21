@@ -9,8 +9,6 @@ using System.Collections.Generic;
 using System.Linq;
 using TextureWrapMode = OpenTK.Graphics.OpenGL4.TextureWrapMode;
 
-
-
 namespace ComputeShader1
 {
 
@@ -88,20 +86,12 @@ namespace ComputeShader1
             transf = glm.rotate(transf, glm.radians(85.0f), new vec3(1, 0, 0));
             transf = glm.translate(transf, new vec3(0, -_clothSize.y, 0));
 
+            int sizeInByte = (int)(_numberOfParticles.x * _numberOfParticles.y) * 4 * sizeof(float);
+
+
             // Initial positions of the particles
             float[] initialPosition = GetInitialPosition(transf);
-            
-            float[] initTextureCoords = GetTextureCoords();
-
-            // Every row is one triangle strip
-            var elements = GetElements();
-            
-
-            int totalNumber = (int)(_numberOfParticles.x * _numberOfParticles.y);
-            int sizeInByte = totalNumber * 4 * sizeof(float);
-
             // The _buffers for positions
-
             positionBuffers[1] = new StorageBuffer(BufferUsageHint.DynamicCopy);
             positionBuffers[1].Allocate(initialPosition, 1);
 
@@ -115,7 +105,7 @@ namespace ComputeShader1
 
             // Set up the VAO
             _clothVao = new VertexArray();
-            _clothVao.Bind();
+
             positionBuffers[0] = new StorageBuffer(BufferUsageHint.DynamicDraw);
             positionBuffers[0].SetData(initialPosition, 0);
             positionBuffers[0].SetAttribPointer(0, 4);
@@ -126,17 +116,16 @@ namespace ComputeShader1
             _normalBuffer.SetAttribPointer(1, 4);
 
             // Texture coordinates
+            float[] initTextureCoords = GetTextureCoords();
             _textureBuffer = new ArrayBuffer(BufferUsageHint.StaticDraw);
             _textureBuffer.SetData(initTextureCoords);
             _textureBuffer.SetAttribPointer(2, 2);
 
-            // Element indicies
-            _elementBuffer = new ArrayBuffer(BufferUsageHint.DynamicCopy, BufferTarget.ElementArrayBuffer);
+            // Element indicies. Every row is one triangle strip
+            var elements = GetElements();
             _numberOfElements = elements.Length;
+            _elementBuffer = new ArrayBuffer(BufferUsageHint.DynamicCopy, BufferTarget.ElementArrayBuffer);
             _elementBuffer.SetData(elements);
-            
-
-            _elementBuffer.Bind();
 
             _clothVao.Unbind();
         }
@@ -148,8 +137,8 @@ namespace ComputeShader1
             {
                 for (int col = 0; col < _numberOfParticles.x; col++)
                 {
-                    elementList.Add((int) ((row + 1) * _numberOfParticles.x + (col)));
-                    elementList.Add((int) ((row) * _numberOfParticles.x + (col)));
+                    elementList.Add((int)((row + 1) * _numberOfParticles.x + (col)));
+                    elementList.Add((int)((row) * _numberOfParticles.x + (col)));
                 }
 
                 elementList.Add(PRIM_RESTART);
@@ -183,7 +172,7 @@ namespace ComputeShader1
             }
             _time = t;
             t += 0.01f;
-            
+
             for (int i = 0; i < 1000; i++)
             {
                 _computeShader.Compute(MemoryBarrierFlags.ShaderStorageBarrierBit, (int)(_numberOfParticles.x / 10), (int)(_numberOfParticles.y / 10), 1);
@@ -198,24 +187,21 @@ namespace ComputeShader1
             // Compute the normals
             _computeNormalShader.Compute(MemoryBarrierFlags.ShaderStorageBarrierBit, (int)(_numberOfParticles.x / 10), (int)(_numberOfParticles.y / 10), 1);
 
-            // Now draw the scene
-            //_renderShader.Use();
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            //_angle += 0.005f;
-            //_view = glm.lookAt(new vec3(7*glm.cos(_angle), 3, 7*glm.sin(_angle)), 
-            //                new vec3(2, 1.5f, 0), 
-            //                    new vec3(0, 1, 0));
 
-            _view = glm.lookAt(new vec3(7, 3, 2),
-                                    new vec3(2, 1.5f, 0),
-                                        new vec3(0, 1, 0));
+            _angle += 0.005f;
+            _view = glm.lookAt(new vec3(7 * glm.cos(_angle), 3, 7 * glm.sin(_angle)),
+                            new vec3(2, 1.5f, 0),
+                                new vec3(0, 1, 0));
 
             SetMatrices();
 
             // Draw the cloth
             _renderShader.Use();
+            // Now draw the scene
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             _clothVao.Bind();
-            GL.DrawElements(PrimitiveType.TriangleStrip, _numberOfElements, DrawElementsType.UnsignedInt, 0);
+            GL.DrawElements(PrimitiveType.TriangleStrip,
+                            _numberOfElements, DrawElementsType.UnsignedInt, 0);
             _clothVao.Unbind();
 
             Context.SwapBuffers();
@@ -270,19 +256,26 @@ namespace ComputeShader1
         private void SetMatrices()
         {
             _renderShader.Use();
-            mat4 mv = _view * _model;
-            mat3 norm = new mat3(new vec3(mv[0]), new vec3(mv[1]), new vec3(mv[2]));
-            _renderShader.SetMatrix3("NormalMatrix", norm.ConvertToMatrix3());
+            var normalMatrix = GetNormalMatrix();
+            _renderShader.SetMatrix3("NormalMatrix", normalMatrix.ConvertToMatrix3());
             _renderShader.SetMatrix4("model", _model.ConvertToMatrix4());
             _renderShader.SetMatrix4("projection", _projection.ConvertToMatrix4());
             _renderShader.SetMatrix4("view", _view.ConvertToMatrix4());
+        }
+
+        private mat3 GetNormalMatrix()
+        {
+            mat4 mv = _view * _model;
+            //normalMatrix = norm.InverseTranspose();
+            mat3 normalMatrix = new mat3(new vec3(mv[0]), new vec3(mv[1]), new vec3(mv[2]));
+            return normalMatrix;
         }
 
         protected override void OnResize(EventArgs e)
         {
             GL.Viewport(0, 0, Width, Height);
             _projection = glm.perspective(glm.radians(60.0f),
-                (float)Width / (float)Height, 0.1f, 100.0f);
+                                           (float)Width / (float)Height, 0.1f, 100.0f);
             base.OnResize(e);
         }
 

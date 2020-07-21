@@ -96,8 +96,7 @@ void main()
 
   // Apply simple Euler integrator
   vec3 a = force * ParticleInvMass;
-  PositionOut[idx] = vec4(
-      p + v * DeltaT + 0.5 * a * DeltaT * DeltaT, 1.0);
+  PositionOut[idx] = vec4( p + v * DeltaT + 0.5 * a * DeltaT * DeltaT, 1.0);
   VelocityOut[idx] = vec4( v + a * DeltaT, 0.0);
 
   // Pin a few of the top verts

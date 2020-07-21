@@ -65,8 +65,8 @@ namespace OpenGLHelper
         {
             // Try to compile the shader
             GL.CompileShader(shader);
+            // Check for OpenGl errors
             CheckErrors.OpenGl();
-
             // Check for compilation errors
             CheckErrors.CompileStatus(shader);
 
@@ -82,7 +82,6 @@ namespace OpenGLHelper
         {
             Use();
             GL.DispatchCompute(num_groups_x, num_groups_y, num_groups_z);
-            //GL.MemoryBarrier(MemoryBarrierFlags.ShaderStorageBarrierBit);
             GL.MemoryBarrier(flag);
         }
 
@@ -102,8 +101,6 @@ namespace OpenGLHelper
         /// <param name="data">The data to set</param>
         public void SetInt(string name, int data)
         {
-            //_handle.Use();
-            //GL.Uniform1(_uniformLocations[name], data);
             Handle.SetInt(name, data);
         }
 
@@ -114,12 +111,10 @@ namespace OpenGLHelper
         /// <param name="data">The data to set</param>
         public void SetFloat(string name, float data)
         {
-            //_handle.Use();
-            //GL.Uniform1(_uniformLocations[name], data);
             Handle.SetFloat(name, data);
         }
 
-        
+
 
         /// <summary>
         /// Set a uniform Matrix4 on this shader
@@ -133,15 +128,11 @@ namespace OpenGLHelper
         /// </remarks>
         public void SetMatrix4(string name, Matrix4 data)
         {
-            //_handle.Use();
-            //GL.UniformMatrix4(_uniformLocations[name], true, ref data);
             Handle.SetMatrix4(name, data);
         }
 
         public void SetMatrix3(string name, Matrix3 data)
         {
-            //_handle.Use();
-            //GL.UniformMatrix3(_uniformLocations[name], true, ref data);
             Handle.SetMatrix3(name, data);
         }
 
@@ -152,21 +143,17 @@ namespace OpenGLHelper
         /// <param name="data">The data to set</param>
         public void SetVector3(string name, Vector3 data)
         {
-            //_handle.Use();
-            //GL.Uniform3(_uniformLocations[name], data);
             Handle.SetVector3(name, data);
         }
 
         public void SetVector4(string name, Vector4 data)
         {
-            //_handle.Use();
-            //GL.Uniform4(_uniformLocations[name], data);
             Handle.SetVector4(name, data);
         }
 
         public int GetAttribLocation(string attribName)
         {
-            
+
             return Handle.GetAttribLocation(attribName);
 
         }
@@ -174,7 +161,7 @@ namespace OpenGLHelper
         public int SubroutineIndex(ShaderType shaderType, string subroutineName)
         {
             Use();
-            return  GL.GetSubroutineIndex(Handle.GetHandle(), shaderType, subroutineName);
+            return GL.GetSubroutineIndex(Handle.GetHandle(), shaderType, subroutineName);
         }
 
     }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace OpenGLHelper
 {
-    public class Cube: TriagleMesh
+    public class Cube: TriangleMesh
     {
         
         public Cube(float side)

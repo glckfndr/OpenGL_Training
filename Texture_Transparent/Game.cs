@@ -12,23 +12,25 @@ namespace Texture_Transparent
     public class Game : GameWindow
     {
         private string _type = "t";
+
         private Shader _refractShader;
-        //private Shader _skyShader;
         private float _angle;
         
-        private mat4 _projection;
         private const float twoPi = (float) (2 * Math.PI);
-        private float _rotSpeed = twoPi/16.0f;
+        private const float _rotSpeed = twoPi/16.0f;
 
         private int _cubeTex;
         private float time = 0.0f;
         
         private Point _mouse;
         private float _tPrev;
+
+        private mat4 _projection;
         private mat4 _view;
         private mat4 _model;
-        TeaPot teaPot;
-        SkyBox sky;
+
+        TeaPot _teaPot;
+        SkyBox _sky;
 
 
         public Game(int width, int height, string title) :
@@ -40,23 +42,18 @@ namespace Texture_Transparent
         {
 
             _refractShader = new Shader("../../Shaders/refract.vert", "../../Shaders/refract.frag");
-            //_skyShader = new Shader("../../Shaders/sky.vert", "../../Shaders/sky.frag");
+            //_skyShader = new Shader("../../Shaders/_sky.vert", "../../Shaders/_sky.frag");
             GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             
             GL.Enable(EnableCap.DepthTest);
             _angle = glm.radians(90.0f);
             _projection = new mat4(1.0f);
-            teaPot = new TeaPot(14, new mat4(1.0f));
-            sky = new SkyBox();
+            _teaPot = new TeaPot(14, new mat4(1.0f));
+            _sky = new SkyBox();
             GL.ActiveTexture(TextureUnit.Texture0);
             _cubeTex = Texture.LoadCubeMap("../../Textures/cubemap_night/night");
             //_cubeTex = Texture.LoadCubeMap("../../Textures/Cube/pisa");
-            //_refractShader.SetInt("CubeMapTex", 0);
-            //glActiveTexture(GL_TEXTURE0);
-            //glBindTexture(GL_TEXTURE_CUBE_MAP, cubeTex);
-            //glActiveTexture(GL_TEXTURE1);
-            //glBindTexture(GL_TEXTURE_CUBE_MAP, cubeTex);
-
+            
             base.OnLoad(e);
         }
 
@@ -104,14 +101,14 @@ namespace Texture_Transparent
                     GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
                     vec3 cameraPos = new vec3(7.0f * glm.cos(_angle), 2.0f, 7.0f * glm.sin(_angle));
-                    _view = glm.lookAt(cameraPos, new vec3(0.0f, 0.0f, 0.0f), new  vec3(0.0f, 1.0f, 0.0f));
+                    _view = glm.lookAt(cameraPos, new vec3(0.0f, 0.0f, 0.0f), 
+                                                    new  vec3(0.0f, 1.0f, 0.0f));
                     _refractShader.SetVector3("WorldCameraPosition", cameraPos.ConvertToVector3());
-                    //view = glm::lookAt(vec3(0.0f,2.0f,0.0f), vec3(0.0f,0.0f,0.0f), vec3(0.0f,0.0f,1.0f));
-
                     _refractShader.SetInt("DrawSkyBox", 1);
+
                     _model = new mat4(1.0f);
                     SetMatrices();
-                    sky.Render();
+                    _sky.Render();
                     _refractShader.SetInt("DrawSkyBox", 0);
 
                     _refractShader.SetFloat("Material.Eta", 0.94f);
@@ -121,7 +118,7 @@ namespace Texture_Transparent
                     _model = glm.translate(_model, new vec3(0.0f, -1.0f, 0.0f));
                     _model = glm.rotate(_model, glm.radians(-90.0f), new vec3(1.0f, 0.0f, 0.0f));
                     SetMatrices();
-                    teaPot.Render();
+                    _teaPot.Render();
 
 
                     break;

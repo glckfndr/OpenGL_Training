@@ -4,6 +4,8 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
 using System;
+using System.Threading;
+using GlmNet;
 using TextureWrapMode = OpenTK.Graphics.OpenGL4.TextureWrapMode;
 
 namespace ParticlesShader
@@ -17,7 +19,12 @@ namespace ParticlesShader
         private VertexObject _particles;
         private float t = 0;
         private float dt;
-        private Matrix4 MVP;
+        private mat4 _MVP;
+        private mat4 _view;
+        private mat4 _model;
+        private mat4 _projection;
+        private float _angle;
+
 
         public Game(int width, int height, string title) : base(width, height, GraphicsMode.Default, title)
         {
@@ -35,23 +42,22 @@ namespace ParticlesShader
             for (uint i = 0; i < nParticles; i++)
             {
                 // Выбрать вектор, определяющий направление и скорость
-                theta = (float)(Math.PI / 16.0 * rnd.NextDouble());
-                phi = (float)(2 * Math.PI * rnd.NextDouble());
+                theta = (float)( Math.PI / 24.0 * rnd.NextDouble());
+                phi = (float)(2* Math.PI * rnd.NextDouble());
                 v.X = (float)(Math.Sin(theta) * Math.Cos(phi));
                 v.Y = (float)(Math.Cos(theta));
                 v.Z = (float)(Math.Sin(theta) * Math.Sin(phi));
                 // Масштабировать величину скорости
-                velocity = (float)(1.9 + 0.5 * rnd.NextDouble());
+                velocity = (float)(1.3 + 0.5 * rnd.NextDouble());
                 v = v.Normalized() * velocity;
-                velocityData[3 * i] = v.X;
+                velocityData[3 * i] = v.X + 0.3f;
                 velocityData[3 * i + 1] = v.Y;
-                velocityData[3 * i + 2] = v.Z;
+                velocityData[3 * i + 2] = v.Z +  0.3f;
             }
-
-
+            
             float[] timeData = new float[nParticles];
             float time = 0.0f;
-            float rate = 0.00075f;
+            float rate = 0.001f;
             for (uint i = 0; i < nParticles; i++)
             {
                 timeData[i] = time;
@@ -59,23 +65,13 @@ namespace ParticlesShader
             }
 
             _shader = new Shader("../../Shaders/particles.vert", "../../Shaders/particles.frag");
+            _shader.Use();
             _shader.SetInt("ParticleTex", 0);
             _shader.SetFloat("ParticleLifetime", 3.5f);
             _shader.SetVector3("Gravity", new Vector3(0.0f, -0.9f, 0.0f));
-            float cosa =(float)(float)Math.Cos(Math.PI / 3);
-            float sina = (float) Math.Sin(Math.PI / 3);
-
-            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(60.0f),
-                (float)Width / (float)Height, 0.1f, 100.0f);
-            Matrix4 model = Matrix4.Identity * Matrix4.CreateRotationY((float)MathHelper.DegreesToRadians(30)); ;
-            Matrix4 view = Matrix4.LookAt(new Vector3(4.0f*cosa, 0.0f, 4.0f*sina),
-                                        new Vector3(0.0f, 1.5f, 0.0f),
-                                        new Vector3(0.0f, 1.0f, 0.0f));
-
-            
-            MVP =  model * view;
-            MVP = MVP * projection;
-            _shader.SetMatrix4("MVP", MVP);
+            _angle =(float)(Math.PI / 3);
+            _model = new mat4(1.0f);
+            _projection = glm.perspective(glm.radians(60.0f), (float)Width / Height, 0.3f, 100.0f);
 
             Texture texture = new Texture("../../Textures/water2.jpg", TextureWrapMode.Repeat);
             this.ClientSize = texture.GetSize();
@@ -87,7 +83,7 @@ namespace ParticlesShader
                 velocityData, timeData);
 
             GL.ClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-
+            GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.PointSize(3.0f);
@@ -110,10 +106,17 @@ namespace ParticlesShader
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            GL.Clear(ClearBufferMask.ColorBufferBit);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             //  Thread.Sleep(500);
+            _shader.Use();
             _shader.SetFloat("Time", t);
-            
+            _angle += 0.015f;
+            _view = glm.lookAt(new vec3(4.0f * glm.cos(_angle), 1.5f, 4.0f * glm.sin(_angle)),
+                new vec3(0.0f, 1.5f, 0.0f),
+                new vec3(0.0f, 1.0f, 0.0f));
+            _MVP = _view * _model;
+            _MVP = _projection * _MVP;
+            _shader.SetMatrix4("MVP", _MVP.ConvertToMatrix4());
             _particles.Draw(PrimitiveType.Points);
             dt = 0.01f;
             t += dt;

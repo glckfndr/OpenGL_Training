@@ -7,14 +7,18 @@ namespace OpenGLHelper
         private int _id;
 
         // disable copying
-        //VertexArray( const VertexArray& );
         //VertexArray& operator = ( const VertexArray& );
+        public VertexArray(VertexArray VAO)
+        {
+            _id = VAO.GetId();
+            Bind();
+        }
 
 
         public VertexArray()
         {
-            // _id = 0;
-            Create();
+            _id = GL.GenVertexArray();
+            Bind();
         }
 
         private bool IsOk()
@@ -26,12 +30,7 @@ namespace OpenGLHelper
         {
             return _id;
         }
-
-        private void Create()
-        {
-            _id = GL.GenVertexArray();
-        }
-
+        
         public void Destroy()
         {
             if (_id != 0)

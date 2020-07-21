@@ -76,12 +76,12 @@ void render()
     vec3 posCam = vec3(0.0);
     if(VertexAge >= 0.0) 
 	{
-        posCam = (vec4(VertexPosition,1) * model * view ).xyz + offsets[gl_VertexID] * ParticleSize;
+        posCam = (view * model * vec4(VertexPosition,1)  ).xyz + offsets[gl_VertexID] * ParticleSize;
         Transp = clamp(1.0 - VertexAge / ParticleLifetime, 0, 1);
     }
     TexCoord = texCoords[gl_VertexID];
 
-    gl_Position = vec4(posCam,1) * projection ;
+    gl_Position = projection * vec4(posCam,1)  ;
 }
 
 void main() 
