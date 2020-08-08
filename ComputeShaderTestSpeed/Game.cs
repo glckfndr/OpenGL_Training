@@ -8,7 +8,26 @@ using System.Threading.Tasks;
 
 namespace ComputeShaderTestSpeed
 {
+    // розмір структури має бути кратим 8 байт, інакше неправильне вирівнювання на графічному процесорі
+    struct Vortex
+    {
+        public Vector2 r;
+        public float gamma;
+        public float radius;
+        public Vector3 dummy0;
+        public float dummy1;
 
+
+        public Vortex(Vector2 r, float gamma, float radius) : this()
+        {
+            this.r = r;
+            this.gamma = gamma;
+            this.radius = radius;
+            dummy0 = Vector3.Zero;
+            dummy1 = 0.5f;
+
+        }
+    }
     internal class Game : GameWindow
     {
         public Game(int width, int height, string title) : base(width, height, GraphicsMode.Default, title)
@@ -18,6 +37,7 @@ namespace ComputeShaderTestSpeed
 
         private const int particleNumber = 4096;
         private Vector4[] A = new Vector4[particleNumber]; // Input array A
+        private Vortex[] AA = new Vortex[particleNumber]; // Input array A
         private Vector4[] C = new Vector4[particleNumber];// Output array
 
 
@@ -31,83 +51,62 @@ namespace ComputeShaderTestSpeed
             Random rnd = new Random();
             for (int i = 0; i < particleNumber; i++)
             {
-                A[i] = new Vector4((float)rnd.NextDouble(), (float)rnd.NextDouble(), 0.1f, 0.1f);
+                var x = (float)rnd.NextDouble();
+                var y = (float)rnd.NextDouble();
+
+                A[i] = new Vector4(x, y, 0.01f, 0.1f);
+                AA[i] = new Vortex( new Vector2(x, y), 0.1f, 0.01f );
                 C[i] = new Vector4(0);
             }
-            
-            var a = new float[particleNumber * 4];
-            for (int i = 0; i < particleNumber; i++)
-            {
-                int k = 4 * i;
-                a[k] = A[i].X;
-                a[k + 1] = A[i].Y;
-                a[k + 2] = A[i].Z;
-                a[k + 3] = A[i].W;
-            }
 
-            var c = new float[particleNumber * 4];
-            for (int i = 0; i < particleNumber; i++)
-            {
-                int k = 4 * i;
-                c[k] = C[i].X;
-                c[k + 1] = C[i].Y;
-                c[k + 2] = C[i].Z;
-                c[k + 3] = C[i].W;
-            }
             Stopwatch stp = new Stopwatch();
             stp.Restart();
-            // Create buffers
-            var bufferA = new StorageBuffer(BufferUsageHint.StaticDraw);
-            bufferA.SetData(a, 0);
-            
+            // var bufferA = new StorageBuffer(BufferUsageHint.StaticDraw);
+            // bufferA.SetData(AA, 0);
+
+            var bufferA = new UniformBuffer(BufferUsageHint.StaticDraw);
+            bufferA.SetData(AA, 0);
+
             var bufferC = new StorageBuffer(BufferUsageHint.DynamicDraw);
-            bufferC.SetData(c, 1);
-            stp.Stop();
-            Console.WriteLine("Send Data to GPU(ms): " + stp.ElapsedMilliseconds);
+            bufferC.SetData(C, 1);
 
-            stp.Restart();
             shader.Compute(MemoryBarrierFlags.ShaderStorageBarrierBit,
-                particleNumber/32, 1, 1);
-            var arrayFromShader = bufferC.GetFloatData();
+                particleNumber / 32, 1, 1);
+            //var arrayFromShader = bufferC.GetFloatData();
+            var arrayFromShader = bufferC.GetVectorData();
             stp.Stop();
-            Console.WriteLine("Compute Time GPU(ms): " + stp.ElapsedMilliseconds);
+            Console.WriteLine("Compute Time GPU and Get Data(ms): " + stp.ElapsedMilliseconds);
+
 
             stp.Restart();
-            Parallel.For(0, particleNumber, j => {
-                    for (int i = 0; i < particleNumber; ++i)
-                    {
-                        C[j].Xy += Velocity(A[j].Xy, A[i]);
-                    }
+
+            Parallel.For(0, particleNumber, j =>
+            {
+                for (int i = 0; i < particleNumber; ++i)
+                {
+                    C[j].Xy += Velocity(A[j].Xy, A[i]);
                 }
+            }
 
             );
-            //for (int j = 0; j < particleNumber; j++)
-            //{
-            //    for (int i = 0; i < particleNumber; ++i)
-            //    {
-            //        C[j].Xy += Velocity(A[j].Xy, A[i]);
-            //    }
-            //}
+            
+            stp.Stop();
+            Console.WriteLine("Parallel Compute Time CPU(ms): " + stp.ElapsedMilliseconds);
+
+            stp.Restart();
+            for (int j = 0; j < particleNumber; j++)
+            {
+                C[j].Xy = Vector2.Zero;
+                for (int i = 0; i < particleNumber; ++i)
+                {
+                    C[j].Xy += Velocity(AA[j].r, AA[i]);
+                }
+            }
             stp.Stop();
             Console.WriteLine("Compute Time CPU(ms): " + stp.ElapsedMilliseconds);
 
-            for (int i = 0; i < particleNumber; i++)
-            {
-                int k = 4 * i;
-                c[k] = C[i].X;
-                c[k + 1] = C[i].Y;
-                c[k + 2] = C[i].Z;
-                c[k + 3] = C[i].W;
-            }
 
-
-            
-            //stp.Restart();
-            //var arrayFromShader = bufferC.GetFloatData(C.Length);
-            //arrayFromShader = bufferC.GetFloatData();
-            //stp.Stop();
-            //Console.WriteLine("Get Data from GPU Time (ms): " + stp.ElapsedMilliseconds);
-            CompareArray(c, arrayFromShader);
+            CompareArray(C, arrayFromShader);
             base.OnLoad(e);
         }
 
@@ -132,7 +131,7 @@ namespace ComputeShaderTestSpeed
                 }
             }
         }
-        
+
 
         private Vector2 Velocity(Vector2 r, Vector4 vortex)
         {
@@ -141,6 +140,16 @@ namespace ComputeShaderTestSpeed
             float selector = Step(vortex.Z, dist);
             dist = selector * dist + (1 - selector) * vortex.Z;
             return vortex.W * new Vector2(-vortex.Y, vortex.X) / (dist * dist);
+
+        }
+
+        private Vector2 Velocity(Vector2 r, Vortex vortex)
+        {
+            Vector2 dr = r - vortex.r;
+            float dist = dr.Length;
+            float selector = Step(vortex.radius, dist);
+            dist = selector * dist + (1 - selector) * vortex.radius;
+            return vortex.gamma * new Vector2(-vortex.r.Y, vortex.r.X) / (dist * dist);
 
         }
 

@@ -1,5 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using System;
+using System.Runtime.InteropServices;
 using OpenTK;
 using Buffer = System.Buffer;
 
@@ -41,7 +42,8 @@ namespace OpenGLHelper
         {
             _arraySize = data.Length;
             Bind(index);
-            GL.BufferData(BufferTarget.ShaderStorageBuffer, Buffer.ByteLength(data), data, _usage);
+            //GL.BufferData(BufferTarget.ShaderStorageBuffer, Buffer.ByteLength(data), data, _usage);
+            GL.BufferData(BufferTarget.ShaderStorageBuffer, _arraySize * Marshal.SizeOf(data[0]), data, _usage);
         }
 
         public void Allocate<T>(T[] data, int index)
@@ -108,30 +110,30 @@ namespace OpenGLHelper
             return array;
         }
 
-        //public Vector4[] GetVectorData()
-        //{
-        //    // Read back the output buffer to check the results
-        //    // Copy the data to our CPU located memory buffer
-        //    //memcpy(&O[0], data, sizeof(float) * arraySize);
-        //    // Release the GPU pointer
-        //    // From here, write results to a file, screen or send them back to
-        //    Bind();
-        //    Vector4[] array = new Vector4[_arraySize];
+        public Vector4[] GetVectorData()
+        {
+            // Read back the output buffer to check the results
+            // Copy the data to our CPU located memory buffer
+            //memcpy(&O[0], data, sizeof(float) * arraySize);
+            // Release the GPU pointer
+            // From here, write results to a file, screen or send them back to
+            Bind();
+            Vector4[] array = new Vector4[_arraySize];
 
-        //    unsafe
-        //    {
-        //        var data = (Vector4*)GL.MapBuffer(BufferTarget.ShaderStorageBuffer, BufferAccess.ReadOnly);
-        //        fixed (Vector4* pointer = array) // Obtain a pointer to the output buffer data
-        //        {
-        //            for (int i = 0; i < _arraySize; i++)
-        //            {
-        //                pointer[i] = data[i];
-        //            }
-        //        }
-        //        GL.UnmapBuffer(BufferTarget.ShaderStorageBuffer);
-        //    }
-        //    return array;
-        //}
+            unsafe
+            {
+                var data = (Vector4*)GL.MapBuffer(BufferTarget.ShaderStorageBuffer, BufferAccess.ReadOnly);
+                fixed (Vector4* pointer = array) // Obtain a pointer to the output buffer data
+                {
+                    for (int i = 0; i < _arraySize; i++)
+                    {
+                        pointer[i] = data[i];
+                    }
+                }
+                GL.UnmapBuffer(BufferTarget.ShaderStorageBuffer);
+            }
+            return array;
+        }
 
     }
 }
