@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Mesh_Manipulation
+﻿namespace MeshWave
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             // This line creates a new instance, and wraps the instance in a using statement so it's automatically disposed once we've exited the block.
             using (Game game = new Game(800, 600, "LearnOpenTK"))

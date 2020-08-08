@@ -20,10 +20,10 @@ namespace OpenGLHelper
             GL.BindTransformFeedback(TransformFeedbackTarget.TransformFeedback, 0);
         }
 
-        public static void Varyings(int programHandle, string[] attributeNames, TransformFeedbackMode mode = TransformFeedbackMode.SeparateAttribs)
-        {
-            GL.TransformFeedbackVaryings(programHandle, attributeNames.Length, attributeNames, mode);
-        }
+        //public static void Varyings(int programHandle, string[] attributeNames, TransformFeedbackMode mode = TransformFeedbackMode.SeparateAttribs)
+        //{
+        //    GL.TransformFeedbackVaryings(programHandle, attributeNames.Length, attributeNames, mode);
+        //}
         
         public void Begin(TransformFeedbackPrimitiveType type = TransformFeedbackPrimitiveType.Points)
         {
@@ -33,6 +33,11 @@ namespace OpenGLHelper
         public void End()
         {
             GL.EndTransformFeedback();
+        }
+
+        public void Draw(PrimitiveType primitiveType = PrimitiveType.Points)
+        {
+            GL.DrawTransformFeedback(primitiveType, _handle);
         }
     }
 }

@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{6666D440-825C-4E40-A675-6AF99DCD8413}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Mesh_Manipulation</RootNamespace>
-    <AssemblyName>Mesh_Manipulation</AssemblyName>
+    <RootNamespace>MeshWave</RootNamespace>
+    <AssemblyName>MeshWave</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

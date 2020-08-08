@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ComputeShader1
+namespace ComputeShaderGravity
 {
     public class Game : GameWindow
     {
@@ -19,26 +19,19 @@ namespace ComputeShader1
         private vec3 nParticles = new vec3(100, 100, 100);
         private int totalParticles;
 
-        private float time = 0.0f;
-        private float deltaT = 0.0f;
-        private float speed = 35.0f;
-        private float angle = 0.0f;
+        private float _time;
+        private float _deltaT;
+        private float _speed = 35.0f;
+        private float _angle;
 
-        //private int _particleVAO;
         private VertexArray _particleVAO;
         private VertexArray _blackHoleVAO;
         private ArrayBuffer _blackHoleBuffer;  // black hole VAO and buffer
         private vec4 _blackHole1 = new vec4(3.9f, 1, 0, 0);
         private vec4 _blackHole2 = new vec4(-3.9f, -1, 0, 0.8f);
 
-
-
-        //private int location;
-        //private uint nParticles = 8000;
-        //private VertexObject _shape;
-        private float t = 0;
+        private float t;
         private float dt;
-        //private mat4 MVP;
         private mat4 _projection;
         private mat4 _view;
         private mat4 _model;
@@ -57,9 +50,6 @@ namespace ComputeShader1
             _shader = new Shader("../../Shaders/particles.vert", "../../Shaders/particles.frag");
 
             _adsShader = new Shader("../../Shaders/ads.vert", "../../Shaders/ads.frag");
-            
-
-
             _computeShader = new Shader("../../Shaders/particles.comp");
             _sphere1 = new Sphere(0.2f,32,32);
             _sphere2 = new Sphere(0.2f, 32, 32);
@@ -68,7 +58,7 @@ namespace ComputeShader1
             GL.ClearColor(0, 0.0f, 0.0f, 1);
 
             _projection = glm.perspective(glm.radians(50.0f),
-                (float)Width / Height, 0.1f, 100.0f);
+                                        (float)Width / Height, 0.1f, 100.0f);
 
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
@@ -78,24 +68,24 @@ namespace ComputeShader1
         protected override void OnRenderFrame(FrameEventArgs e)
         {
 
-            if (time == 0.0f)
+            if (_time == 0.0f)
             {
-                deltaT = 0.0f;
+                _deltaT = 0.0f;
             }
             else
             {
-                deltaT = t - time;
+                _deltaT = t - _time;
             }
-            time = t;
+            _time = t;
             if (true)
             {
-                angle += speed * deltaT;
-                if (angle > 360.0f) angle -= 360.0f;
+                _angle += _speed * _deltaT;
+                if (_angle > 360.0f) _angle -= 360.0f;
             }
 
             // Rotate the attractors ("black holes")
             _model = new mat4(1.0f);
-            mat4 rot = glm.rotate(new mat4(1.0f), glm.radians(angle), new vec3(0, 0, 1));
+            mat4 rot = glm.rotate(new mat4(1.0f), glm.radians(_angle), new vec3(0, 0, 1));
             vec3 att1 = new vec3(rot * _blackHole1);
             vec3 att2 = new vec3(rot * _blackHole2);
 
@@ -105,9 +95,8 @@ namespace ComputeShader1
             var x = (float)(0.1 * Math.Sin(t));
             _computeShader.SetVector3("BlackHolePos1", new Vector3(att1.x, att1.y, att1.z));
             _computeShader.SetVector3("BlackHolePos2", new Vector3(att2.x, att2.y, att2.z));
-            // GL.DispatchCompute(totalParticles / 1000, 1, 1);
-            // GL.MemoryBarrier(MemoryBarrierFlags.ShaderStorageBarrierBit);
             _computeShader.Compute(MemoryBarrierFlags.ShaderStorageBarrierBit, totalParticles / 1000, 1, 1);
+            
             // Draw the scene
             _shader.Use();
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -116,20 +105,14 @@ namespace ComputeShader1
             // Draw the particles
             _shader.SetVector4("Color", new Vector4(1, 0.5f, 0, 0.2f));
             GL.PointSize(1.0f);
-            _particleVAO.Bind();
-            GL.DrawArrays(PrimitiveType.Points, 0, totalParticles);
-            _particleVAO.Unbind();
+            //_particleVAO.Bind();
+            //GL.DrawArrays(PrimitiveType.Points, 0, totalParticles);
+            //_particleVAO.Unbind();
+            _particleVAO.Draw(PrimitiveType.Points, 0, totalParticles);
 
             float[] data = new float[] { att1.x, att1.y, att1.z, 1.0f, att2.x, att2.y, att2.z, 1.0f };
 
             _blackHoleBuffer.SetSubData(IntPtr.Zero, data.Length * sizeof(float), data);
-
-            //GL.PointSize(10.0f);
-            // Draw the attractors
-            //  _blackHoleVAO.Bind();
-            //  GL.DrawArrays(PrimitiveType.Points, 0, 2);
-            //  _blackHoleVAO.Unbind();
-            //_shader.SetVector4("Color", new Vector4(0.44f, 0.91f, 0.96f, 1.0f));
             _adsShader.Use();
             _adsShader.SetVector3("LightIntensity", new Vector3(0.95f, 0.95f, 2.0f));
             _adsShader.SetVector3("Kd", new Vector3(0.2f, 0.2f, 0.9f));
@@ -146,17 +129,8 @@ namespace ComputeShader1
             
             _adsShader.SetVector4("LightPosition", view * lp);
             _sphere1.Render();
-
-            //_shader.SetVector4("Color", new Vector4(0.81f, 0.40f, 0.80f,1));
-
+            
             _adsShader.Use();
-
-            //_adsShader.SetVector4("LightPosition", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-            //_adsShader.SetVector3("LightIntensity", new Vector3(1.0f));
-            //_adsShader.SetVector3("Ka", new Vector3(0.8f));
-            //_adsShader.SetVector3("Ks", new Vector3(0.2f));
-            //_adsShader.SetFloat("Shininess", 100.0f);
-            //_adsShader.SetVector3("Kd", new Vector3(0.0f, 0, 1.0f));
             _adsShader.SetVector3("LightIntensity", new Vector3(1,1,2.0f));
             
             _adsShader.SetVector3("Kd", new Vector3(0.2f, 0.9f, 0.2f));
@@ -167,7 +141,6 @@ namespace ComputeShader1
             _model = new mat4(1.0f);
             _model = glm.translate(_model, new vec3(att2.x, att2.y, att2.z));
             SetMatrices2();
-            //_adsShader.SetVector4("LightPosition", new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
             _sphere2.Render();
 
             Context.SwapBuffers();

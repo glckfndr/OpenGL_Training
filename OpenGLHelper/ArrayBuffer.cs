@@ -109,7 +109,7 @@ namespace OpenGLHelper
                                         bool normalized = false, VertexAttribPointerType type = VertexAttribPointerType.Float)
         {
             Bind();
-            var dataLocation = shader.GetAttribLocation(attributeName);
+            var dataLocation = shader.GetAttributeLocation(attributeName);
             GL.EnableVertexAttribArray(dataLocation);
             GL.VertexAttribPointer(dataLocation,
                                     numberOfComponent,

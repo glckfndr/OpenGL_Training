@@ -6,22 +6,17 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 using System;
 
-namespace Mesh_Manipulation
+namespace MeshWave
 {
     public class Game : GameWindow
     {
         private string _type = "t";
         private Shader _shader;
-        private ArrayBuffer _elementBufferObject;
-        private int _vertexArrayObject;
-        //private int _vertexBufferObject;
-        private ArrayBuffer _vertexBufferObject;
         private mat4 _view;
         private mat4 _model;
         private mat4 _projection;
-        //private (float[] vertices, uint[] indices) plain;
-        private float time = 0.0f;
-        private float _angle = 0.0f;
+        private float _time;
+        private float _angle;
         private Plane _plane;
 
         public Game(int width, int height, string title) :
@@ -51,19 +46,7 @@ namespace Mesh_Manipulation
             _shader.SetFloat("Velocity", 0.08f);
             _shader.SetFloat("Amp", 0.5f);
             _shader.SetFloat("Freq", 2.0f);
-
-            //_vertexArrayObject = GL.GenVertexArray();
-            //GL.BindVertexArray(_vertexArrayObject);
-
-            //_vertexBufferObject = new ArrayBuffer(BufferUsageHint.StaticDraw);
-            //_vertexBufferObject.SetData(plain.vertices);
-            //_vertexBufferObject.SetAttribPointer(_shader, "VertexPosition", 3, 0);
-
-            //_elementBufferObject = new ArrayBuffer(BufferUsageHint.StaticDraw, BufferTarget.ElementArrayBuffer);
-            //_elementBufferObject.SetData(plain.indices);
-
-            //GL.BindVertexArray(0);
-
+            
             base.OnLoad(e);
         }
 
@@ -71,14 +54,13 @@ namespace Mesh_Manipulation
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            // GL.Clear(ClearBufferMask.ColorBufferBit);
-            time += 0.5f;
+            _time += 0.5f;
             switch (_type)
             {
 
                 case "t":
                     GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-                    _shader.SetFloat("Time", time);
+                    _shader.SetFloat("Time", _time);
                     _view = glm.lookAt(new vec3(10.0f * glm.cos(_angle), 4.0f, 10.0f * glm.sin(_angle)),
                                    new vec3(0.0f, 0.0f, 0.0f), new vec3(0.0f, 1.0f, 0.0f));
                     _projection = glm.perspective(glm.radians(60.0f), (float)Width / Height, 0.3f, 100.0f);
@@ -87,17 +69,10 @@ namespace Mesh_Manipulation
                     _model = glm.rotate(_model, glm.radians(50.0f), new vec3(1.0f, 0.0f, 0.0f));
                     SetMatrices();
                     _plane.Render();
-                    //GL.BindVertexArray(_vertexArrayObject);
-                    //GL.DrawElements(PrimitiveType.Triangles, plain.indices.Length, 
-                    //  DrawElementsType.UnsignedInt, 0);
-
+            
                     break;
                 case "r":
-                    //_shader.Use();
-                    //_shader.SetFloat("Time", time);
-                    //GL.BindVertexArray(_vertexArrayObject);
-                    //GL.DrawElements(PrimitiveType.Triangles, plain.indices.Length, DrawElementsType.UnsignedInt, 0);
-
+                    
                     break;
 
             }
@@ -130,17 +105,17 @@ namespace Mesh_Manipulation
         protected override void OnResize(EventArgs e)
         {
             GL.Viewport(0, 0, Width, Height);
-            _projection = glm.perspective(glm.radians(60.0f), (float)Width / Height, 0.3f, 100.0f);
+            _projection = glm.perspective(glm.radians(60.0f), (float)Width / Height, 
+                                        0.3f, 100.0f);
             base.OnResize(e);
         }
-
-
-
+        
         private void SetMatrices()
         {
-            mat4 mv = _view  * _model   ;
+            mat4 mv = _view * _model;
             _shader.SetMatrix4("ModelViewMatrix", mv.ConvertToMatrix4());
-            _shader.SetMatrix3("NormalMatrix", (new mat3(new vec3(mv[0]), new vec3(mv[1]), new vec3(mv[2]))).ConvertToMatrix3());
+            var normalMatrix = new mat3(new vec3(mv[0]), new vec3(mv[1]), new vec3(mv[2]));
+            _shader.SetMatrix3("NormalMatrix", normalMatrix.ConvertToMatrix3());
             _shader.SetMatrix4("MVP", (_projection * mv).ConvertToMatrix4());
         }
 
@@ -152,10 +127,6 @@ namespace Mesh_Manipulation
             GL.BindVertexArray(0);
             GL.UseProgram(0);
             _plane.DeleteBuffers();
-            //GL.DeleteBuffer(_vertexBufferObject);
-            // _vertexBufferObject.Destroy();
-            // _elementBufferObject?.Destroy();
-            // GL.DeleteVertexArray(_vertexArrayObject);
             _shader.Handle.Delete();
             base.OnUnload(e);
         }

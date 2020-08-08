@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TextureWrapMode = OpenTK.Graphics.OpenGL4.TextureWrapMode;
 
-namespace ComputeShader1
+namespace ComputeShaderCloth
 {
 
     public class Game : GameWindow
@@ -27,8 +27,8 @@ namespace ComputeShader1
         private float t = 0.0f;
         private float _speed = 200;
         private int _readBuffer = 0;
-        private readonly StorageBuffer[] positionBuffers = new StorageBuffer[2];// = new int[2];
-        private readonly StorageBuffer[] _velocityBuffers = new StorageBuffer[2];  //new int[2];
+        private readonly StorageBuffer[] positionBuffers = new StorageBuffer[2];
+        private readonly StorageBuffer[] _velocityBuffers = new StorageBuffer[2];
         private StorageBuffer _normalBuffer;
         private ArrayBuffer _elementBuffer;
         private ArrayBuffer _textureBuffer;

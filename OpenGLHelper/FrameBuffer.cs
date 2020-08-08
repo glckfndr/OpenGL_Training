@@ -26,5 +26,18 @@ namespace OpenGLHelper
         {
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         }
+
+        public void CheckStatus()
+        {
+            var result = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
+            if (result == FramebufferErrorCode.FramebufferComplete)
+            {
+                Console.WriteLine("Framebuffer is complete");
+            }
+            else
+            {
+                Console.WriteLine("Framebuffer error: " + result);
+            }
+        }
     }
 }

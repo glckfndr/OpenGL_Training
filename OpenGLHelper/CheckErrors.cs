@@ -19,20 +19,20 @@ namespace OpenGLHelper
             return foundError;
         }
 
-        public static void LinkStatus(int prog)
+        public static void LinkStatus(int program)
         {
-            GL.GetProgram(prog, GetProgramParameterName.LinkStatus, out var code);
+            GL.GetProgram(program, GetProgramParameterName.LinkStatus, out var code);
             if (code != (int)All.True)
             {
                 int bufSize = 0;
                 int length = 0;
                 string infoLog;
-                GL.GetProgram(prog, GetProgramParameterName.InfoLogLength, out bufSize);
+                GL.GetProgram(program, GetProgramParameterName.InfoLogLength, out bufSize);
                 if (bufSize > 0)
                 {
-                    GL.GetProgramInfoLog(prog, bufSize, out length, out infoLog);
+                    GL.GetProgramInfoLog(program, bufSize, out length, out infoLog);
                     Console.WriteLine($"Program Info Log: {infoLog}");
-                    throw new Exception($"Error occurred whilst linking Program({prog}).\n\n{infoLog}");
+                    throw new Exception($"Error occurred whilst linking Program({program}).\n\n{infoLog}");
                 }
             }
         }

@@ -17,12 +17,12 @@ namespace OpenGLHelper
         // Shaders are written in GLSL, which is a language very similar to C in its semantics.
         // The GLSL source is compiled *at runtime*, so it can optimize itself for the graphics card it's currently being used on.
         // A commented example of GLSL can be found in shader.vert
-        public Shader(string vertPath, string fragPath)
+        public Shader(string vertexShaderPath, string fragmentShaderPath)
         {
-            var vertexShader = CreateShader(vertPath, ShaderType.VertexShader);
+            var vertexShader = CreateShaderFromFile(vertexShaderPath, ShaderType.VertexShader);
             CompileShader(vertexShader);
 
-            var fragmentShader = CreateShader(fragPath, ShaderType.FragmentShader);
+            var fragmentShader = CreateShaderFromFile(fragmentShaderPath, ShaderType.FragmentShader);
             CompileShader(fragmentShader);
 
             Handle = new GLSLProgram();
@@ -32,10 +32,29 @@ namespace OpenGLHelper
             _uniformLocations = Handle.GetUniforms();
         }
 
+        public Shader(string vertexShaderPath, string fragmentShaderPath, string[] feedbackVariables)
+        {
+            var vertexShader = CreateShaderFromFile(vertexShaderPath, ShaderType.VertexShader);
+            CompileShader(vertexShader);
+
+            var fragmentShader = CreateShaderFromFile(fragmentShaderPath, ShaderType.FragmentShader);
+            CompileShader(fragmentShader);
+
+            Handle = new GLSLProgram();
+            Handle.Attach(vertexShader, fragmentShader);
+
+            Handle.TransformFeedbackVaryings(feedbackVariables);
+
+            Handle.Link();
+            Handle.ClearShaders(vertexShader, fragmentShader);
+            _uniformLocations = Handle.GetUniforms();
+        }
+
+
 
         public Shader(string computeShaderPath)
         {
-            var computeShader = CreateShader(computeShaderPath, ShaderType.ComputeShader);
+            var computeShader = CreateShaderFromFile(computeShaderPath, ShaderType.ComputeShader);
             CompileShader(computeShader);
 
             Handle = new GLSLProgram();
@@ -48,12 +67,12 @@ namespace OpenGLHelper
 
 
 
-        public static int CreateShader(string shaderPath, ShaderType type)
+        public static int CreateShaderFromFile(string shaderPath, ShaderType type)
         {
             // LoadSource is a simple function that just loads all text from the file whose path is given.
             var shaderSource = LoadSource(shaderPath);
 
-            // GL.CreateShader will create an empty shader (obviously). The ShaderType enum denotes which type of shader will be created.
+            // GL.CreateShaderFromFile will create an empty shader (obviously). The ShaderType enum denotes which type of shader will be created.
             var shader = GL.CreateShader(type);
 
             // Now, bind the GLSL source code
@@ -151,17 +170,17 @@ namespace OpenGLHelper
             Handle.SetVector4(name, data);
         }
 
-        public int GetAttribLocation(string attribName)
+        public int GetAttributeLocation(string attributeName)
         {
 
-            return Handle.GetAttribLocation(attribName);
+            return Handle.GetAttribLocation(attributeName);
 
         }
 
-        public int SubroutineIndex(ShaderType shaderType, string subroutineName)
+        public int GetSubroutineIndex(ShaderType shaderType, string subroutineName)
         {
-            Use();
-            return GL.GetSubroutineIndex(Handle.GetHandle(), shaderType, subroutineName);
+            
+            return Handle.GetSubroutineIndex(shaderType, subroutineName);
         }
 
     }

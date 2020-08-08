@@ -1,5 +1,5 @@
 ﻿using OpenTK;
-using OpenTK.Graphics.OpenGL;
+using OpenTK.Graphics.OpenGL4;
 using System.Collections.Generic;
 
 namespace OpenGLHelper
@@ -23,9 +23,11 @@ namespace OpenGLHelper
         {
             // We link the program
             GL.LinkProgram(_handle);
+            // Check for OpenGl errors
             CheckErrors.OpenGl();
             // Check for linking errors
             CheckErrors.LinkStatus(_handle);
+
 
         }
 
@@ -144,10 +146,27 @@ namespace OpenGLHelper
             GL.Uniform3(_uniformLocations[name], data);
         }
 
+        //public void SetVector3Array(string name,int number , float[] data)
+        //{
+        //    Use();
+        //    GL.ProgramUniform3(_uniformLocations[name], number, data);
+        //}
+
         public void SetVector4(string name, Vector4 data)
         {
             Use();
             GL.Uniform4(_uniformLocations[name], data);
+        }
+
+        public int GetSubroutineIndex(ShaderType shaderType, string subroutineName)
+        {
+            Use();
+            return GL.GetSubroutineIndex(_handle, shaderType, subroutineName);
+        }
+
+        public void TransformFeedbackVaryings(string[] feedbackVariables, TransformFeedbackMode mode = TransformFeedbackMode.SeparateAttribs)
+        {
+            GL.TransformFeedbackVaryings(_handle, feedbackVariables.Length, feedbackVariables, mode);
         }
     }
 }

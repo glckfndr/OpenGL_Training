@@ -16,7 +16,8 @@ namespace OpenGL_Training
         private int[] _vertexArrayObject = new int[2];
         private ArrayBuffer _elementBufferObject;
         private Shader _shader;
-        private int location;
+        private int _location;
+        private string _type = "r";
 
         float[] verticesDataTriangle =
         {
@@ -59,7 +60,7 @@ namespace OpenGL_Training
         {
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-            _shader = new Shader("../../shader.vert", "../../shader.frag");
+            _shader = new Shader("../../Shaders/shader.vert", "../../Shaders/shader.frag");
             _shader.Use();
             _shader.SetVector4("blob.InnerColor", new Vector4(1.0f, 0.0f, 0.0f, 1));
             _shader.SetVector4("blob.OuterColor", new Vector4(0.0f, 0.0f, 0.0f, 1));
@@ -90,9 +91,7 @@ namespace OpenGL_Training
             
             base.OnLoad(e);
         }
-
         
-
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             KeyboardState input = Keyboard.GetState();
@@ -100,6 +99,16 @@ namespace OpenGL_Training
             if (input.IsKeyDown(Key.Escape))
             {
                 Exit();
+            }
+            else if (input.IsKeyDown(Key.T))
+            {
+                _type = "t";
+
+            }
+            else if (input.IsKeyDown(Key.R))
+            {
+                _type = "r";
+
             }
 
             base.OnUpdateFrame(e);
@@ -115,8 +124,18 @@ namespace OpenGL_Training
             _rotation = Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(_angle));
             _shader.SetMatrix4("RotationMatrix", _rotation);
             GL.BindVertexArray(_vertexArrayObject[0]);
-            GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
-            //GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+            switch (_type)
+            {
+                case "t":
+                    GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+                    
+                    break;
+                case "r":
+                    GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+                    break;
+            }
+            
+            
 
             Context.SwapBuffers();
             base.OnRenderFrame(e);

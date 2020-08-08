@@ -1,11 +1,11 @@
-﻿using OpenGLHelper;
+﻿using GlmNet;
+using OpenGLHelper;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 using System;
 using System.Drawing;
-using GlmNet;
 
 namespace Texture_FBO
 {
@@ -13,23 +13,24 @@ namespace Texture_FBO
     {
         private string _type = "t";
         private Shader _shader;
-        //private Shader _skyShader;
+        private Texture _whiteTexHandle;
+        private Texture _renderTex;
         private float _angle;
-        
-        private mat4 _projection;
-        private const float twoPi = (float) (2 * Math.PI);
-        private float _rotSpeed = twoPi/16.0f;
 
-        private int _cubeTex;
+        private mat4 _projection;
+        private const float twoPi = (float)(2 * Math.PI);
+        private float _rotSpeed = twoPi / 16.0f;
         private float time = 0.0f;
-        
+
         private Point _mouse;
         private float _tPrev;
         private mat4 _view;
         private mat4 _model;
-        TeaPot _teaPot;
-        Cube _cube;
-        private int _fboHandle;
+        private TeaPot _teaPot;
+        private Cube _cube;
+        //private int _fboHandle;
+        private FrameBuffer _fboHandle;
+        private RenderBuffer _depthBuf;
 
 
         public Game(int width, int height, string title) :
@@ -42,25 +43,25 @@ namespace Texture_FBO
             _teaPot = new TeaPot(14, new mat4(1.0f));
             _cube = new Cube(1.0f);
             _shader = new Shader("../../Shaders/rendertotex.vert", "../../Shaders/rendertotex.frag");
-            
+
             GL.ClearColor(1.0f, 1.0f, 1.0f, 1.0f);
             GL.Enable(EnableCap.DepthTest);
 
             _projection = new mat4(1.0f);
             _angle = glm.radians(140.0f);
             _shader.SetVector3("Light.Intensity", new Vector3(1.0f, 1.0f, 1.0f));
-            setupFBO();            
             
 
-            // One pixel white texture
-            int whiteTexHandle;
-            byte[] whiteTex = { 5, 55, 255, 255 };
-            GL.ActiveTexture(TextureUnit.Texture1);
-            whiteTexHandle = GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, whiteTexHandle);
 
-            GL.TexStorage2D(TextureTarget2d.Texture2D, 1,SizedInternalFormat.Rgba8, 1, 1);
-            GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, 1, 1,PixelFormat.Rgba, PixelType.UnsignedByte, whiteTex);
+            // One pixel white texture
+            byte[] whiteTex = { 5, 55, 255, 255 };
+            _whiteTexHandle = new Texture(1, 1, whiteTex, TextureUnit.Texture1);
+            // Create the texture object
+            _renderTex = new Texture(512, 512, TextureUnit.Texture0);
+            // Create the depth buffer
+            _depthBuf = new RenderBuffer(512, 512);
+
+            SetupFBO();
 
             base.OnLoad(e);
         }
@@ -68,7 +69,7 @@ namespace Texture_FBO
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             KeyboardState input = Keyboard.GetState();
-            
+
             if (input.IsKeyDown(Key.Escape))
             {
                 Exit();
@@ -89,7 +90,7 @@ namespace Texture_FBO
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            
+
             float deltaT = time - _tPrev;
             if (_tPrev == 0.0f) deltaT = 0.0f;
             _tPrev = time;
@@ -101,35 +102,38 @@ namespace Texture_FBO
 
             float dt = 0.01f;
             time += dt;
-            
+
             switch (_type)
             {
 
                 case "t":
-                    GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fboHandle);
+
+                    //GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fboHandle);
+                    _fboHandle.Bind();
                     RenderToTexture();
                     GL.Flush();
-                    GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+                    //GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+                    _fboHandle.UnBind();
                     RenderScene();
-                    
+
                     break;
                 case "r":
-                    
+
 
                     break;
             }
-            
+
             Context.SwapBuffers();
             base.OnRenderFrame(e);
         }
 
-        void RenderToTexture()
+        private void RenderToTexture()
         {
             _shader.SetInt("RenderTex", 1);
             GL.Viewport(0, 0, 512, 512);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            _view = glm.lookAt(new vec3(0.0f, 0.0f, 7.0f),new vec3(0.0f, 0.0f, 0.0f), new vec3(0.0f, 1.0f, 0.0f));
+            _view = glm.lookAt(new vec3(0.0f, 0.0f, 7.0f), new vec3(0.0f, 0.0f, 0.0f), new vec3(0.0f, 1.0f, 0.0f));
             _projection = glm.perspective(glm.radians(60.0f), 1.0f, 0.3f, 100.0f);
 
             _shader.SetVector4("Light.Position", new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
@@ -140,8 +144,8 @@ namespace Texture_FBO
 
 
             _model = new mat4(1.0f);
-            _model = glm.translate(_model,new vec3(0.0f, -1.5f, 0.0f));
-            _model = glm.rotate(_model, glm.radians(-90.0f),new vec3(1.0f, 0.0f, 0.0f));
+            _model = glm.translate(_model, new vec3(0.0f, -1.5f, 0.0f));
+            _model = glm.rotate(_model, glm.radians(-90.0f), new vec3(1.0f, 0.0f, 0.0f));
             SetMatrices();
             _teaPot.Render();
         }
@@ -154,7 +158,7 @@ namespace Texture_FBO
 
             vec3 cameraPos = new vec3(2.0f * glm.cos(_angle), 1.5f, 2.0f * glm.sin(_angle));
             _view = glm.lookAt(cameraPos, new vec3(0.0f, 0.0f, 0.0f), new vec3(0.0f, 1.0f, 0.0f));
-            _projection = glm.perspective(glm.radians(45.0f), (float) Width / Height, 0.3f, 100.0f);
+            _projection = glm.perspective(glm.radians(45.0f), (float)Width / Height, 0.3f, 100.0f);
 
             _shader.SetVector4("Light.Position", new Vector4(0, 0, 0, 1));
             _shader.SetVector3("Material.Kd", new Vector3(0.9f, 0.9f, 0.9f));
@@ -172,56 +176,28 @@ namespace Texture_FBO
         {
             mat4 mv = _view * _model;
             _shader.SetMatrix4("ModelViewMatrix", mv.ConvertToMatrix4());
-            _shader.SetMatrix3("NormalMatrix", 
+            _shader.SetMatrix3("NormalMatrix",
                 (new mat3(new vec3(mv[0]), new vec3(mv[1]), new vec3(mv[2]))).ConvertToMatrix3());
             _shader.SetMatrix4("MVP", (_projection * mv).ConvertToMatrix4());
         }
 
-
-        void setupFBO()
+        private void SetupFBO()
         {
             // Generate and bind the framebuffer
-            _fboHandle = GL.GenFramebuffer();
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fboHandle);
-
-            // Create the texture object
-            int renderTex= GL.GenTexture();
-            GL.ActiveTexture(TextureUnit.Texture0);  // Use texture unit 0
-            GL.BindTexture(TextureTarget.Texture2D, renderTex);
-
-            GL.TexStorage2D(TextureTarget2d.Texture2D, 1,SizedInternalFormat.Rgba8, 512, 512);
-
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int) TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-
+            _fboHandle = new FrameBuffer();
             // Bind the texture to the FBO
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,TextureTarget.Texture2D, renderTex, 0);
-
-            // Create the depth buffer
-            int depthBuf= GL.GenRenderbuffer();
-            GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, depthBuf);
-            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer,RenderbufferStorage.DepthComponent, 512, 512);
-
+            _renderTex.BindToFrameBuffer();
             // Bind the depth buffer to the FBO
-            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
-                RenderbufferTarget.Renderbuffer, depthBuf);
+            _depthBuf.BindToFrameBuffer();
 
             // Set the targets for the fragment output variables
-            DrawBuffersEnum[] drawBuffers = {DrawBuffersEnum.ColorAttachment0};
+            DrawBuffersEnum[] drawBuffers = { DrawBuffersEnum.ColorAttachment0 };
             GL.DrawBuffers(1, drawBuffers);
 
-            var result = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
-            if (result == FramebufferErrorCode.FramebufferComplete)
-            {
-                Console.WriteLine("Framebuffer is complete");
-            }
-            else
-            {
-                Console.WriteLine("Framebuffer error: " + result);
-            }
+            _fboHandle.CheckStatus();
 
             // Unbind the framebuffer, and revert to default framebuffer
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            _fboHandle.UnBind();
         }
 
 
@@ -243,7 +219,7 @@ namespace Texture_FBO
             base.OnResize(e);
         }
 
-        
+
 
         protected override void OnUnload(EventArgs e)
         {
@@ -252,10 +228,10 @@ namespace Texture_FBO
             GL.BindVertexArray(0);
             GL.UseProgram(0);
 
-            
+
 
             _shader.Handle.Delete();
-            
+
 
             base.OnUnload(e);
         }

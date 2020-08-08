@@ -23,7 +23,7 @@ vec3 ads( )
 
     return
         LightIntensity * ( Ka +  Kd * max( dot(s, Normal), 0.0 ) +
-          Ks * pow( max( dot(r,v), 0.0 ), Shininess ) );
+					Ks * pow( max( dot(r,v), 0.0 ), Shininess ) );
 }
 
 void main() 

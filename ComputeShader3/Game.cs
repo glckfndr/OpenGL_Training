@@ -6,15 +6,11 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 using System;
 
-namespace ComputeShader3
+namespace ComputeShaderFractal
 {
 
     public class Game : GameWindow
     {
-
-
-        //private GLSLProgram renderProg;
-        //private GLSLProgram computeProg;
         private Shader _renderShader;
         private Shader _computeShader;
 
@@ -42,17 +38,10 @@ namespace ComputeShader3
         protected override void OnLoad(EventArgs e)
         {
             GL.Enable(EnableCap.DepthTest);
-            
-           // GL.Enable(EnableCap.CullFace);
-           // GL.CullFace(CullFaceMode.FrontAndBack);
-          //  GL.ClearColor(1,0,0,1);
-
             cube = new Cube(1.5f);
             _renderShader = new Shader("../../Shaders/ads.vert", "../../Shaders/ads.frag");
             _computeShader = new Shader("../../Shaders/mandelbrot.comp");
             InitBuffers();
-            //_texture = new Texture("../../Textures/water2.jpg", TextureWrapMode.Repeat);
-            //_texture.Use();
             setWindow();
 
             _renderShader.Use();
@@ -62,7 +51,6 @@ namespace ComputeShader3
             _renderShader.SetVector3("Ka", new Vector3(0.2f));
             _renderShader.SetVector3("Ks", new Vector3(0.2f));
             _renderShader.SetFloat("Shininess", 80.0f);
-
             
             base.OnLoad(e);
         }

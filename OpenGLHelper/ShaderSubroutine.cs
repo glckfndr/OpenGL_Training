@@ -14,7 +14,7 @@ namespace OpenGLHelper
         public ShaderSubroutine(Shader shader, ShaderType shaderType , string subroutineName)
         {
             _shaderType = shaderType;
-            _index = shader.SubroutineIndex(shaderType, subroutineName);
+            _index = shader.GetSubroutineIndex(shaderType, subroutineName);
         }
 
         public void Use()

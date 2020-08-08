@@ -1,4 +1,5 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using System.Threading;
+using OpenTK.Graphics.OpenGL4;
 
 namespace OpenGLHelper
 {
@@ -47,6 +48,14 @@ namespace OpenGLHelper
         public void Unbind()
         {
             GL.BindVertexArray(0);
+        }
+
+        public void Draw(PrimitiveType primitiveType, int start, int numberOfElements)
+        {
+            Bind();
+            GL.DrawArrays(primitiveType, start, numberOfElements);
+            Unbind();
+
         }
     }
 }

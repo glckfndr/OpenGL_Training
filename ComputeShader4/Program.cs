@@ -1,4 +1,4 @@
-﻿namespace ComputeShader4
+﻿namespace ComputeShaderFindEdge
 {
     internal class Program
     {

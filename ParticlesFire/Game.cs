@@ -5,47 +5,38 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 using System;
-using TextureWrapMode = OpenTK.Graphics.OpenGL4.TextureWrapMode;
+using System.Threading;
 
 namespace ParticlesFire
 {
     public class Game : GameWindow
     {
 
-        private Shader _shader;
-
-
-        private int[] _posBuf = new int[2];
-        private int[] _velBuf = new int[2];
-        private int[] _startTime = new int[2];
-
-        private int[] _particleVertexArray = new int[2];
-        private int[] _feedback = new int[2];
-        private int _initVel;
+        private ArrayBuffer[] _posBuf;// = new ArrayBuffer[2];
+        private ArrayBuffer[] _velBuf = new ArrayBuffer[2];
+        private ArrayBuffer[] _startTime = new ArrayBuffer[2];
+        private VertexArray[] _particleVertexArray;// = new VertexArray[2];
+        private TransformFeedback[] _feedback = new TransformFeedback[2];
+        private ArrayBuffer _initVel;
 
         private int _drawBuf = 1;
-        private int _query;
-        private int _renderSub;
-        private int _updateSub;
-        private int _nParticles = 4000;
-        private float _angle = 0;
-        private float _time = 0;
-        private float _deltaT = 0;
-        //private Grid _grid;
+        private int _nParticles = 5000;
+        private float _angle;
+        private float _time;
+        private float _deltaT;
 
         private Texture _texture;
-        private float particleLifetime = 6;
 
-        private float t = 0;
+
+        private float t;
         private float dt = 0.05f;
 
         private mat4 _projection;
         private mat4 _view;
         private mat4 _model;
-        private GLSLProgram _prog;
-        private int updateSub;
-        private int renderSub;
-
+        private Shader _shader;
+        private int _updateSub;
+        private int _renderSub;
 
 
         public Game(int width, int height, string title) : base(width, height, GraphicsMode.Default, title)
@@ -55,38 +46,43 @@ namespace ParticlesFire
 
         protected override void OnLoad(EventArgs e)
         {
-            compileAndLinkShader();
+            // compileAndLinkShader();
+            string[] outputNames = new string[] { "Position", "Velocity", "StartTime" };
+            _shader = new Shader("../../Shaders/fire.vert", "../../Shaders/fire.frag", outputNames);
 
-            int programHandle = _prog.GetHandle();
-            renderSub = GL.GetSubroutineIndex(programHandle, ShaderType.VertexShader, "render");
-            updateSub = GL.GetSubroutineIndex(programHandle, ShaderType.VertexShader, "update");
+            //int programHandle = _shader.GetHandle();
+            _renderSub = _shader.GetSubroutineIndex(ShaderType.VertexShader, "render");
+            _updateSub = _shader.GetSubroutineIndex(ShaderType.VertexShader, "update");
 
             GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            GL.PointSize(50.0f);
+
+            GL.Enable(EnableCap.ProgramPointSize);
+            GL.PointSize(100.0f);
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
             _angle = (float)(Math.PI / 2);
             _model = new mat4(1.0f);
             _view = glm.lookAt(new vec3(3.0f * glm.cos(_angle), 1.5f, 3.0f * glm.sin(_angle)),
-                new vec3(0.0f, 1.5f, 0.0f),
+                            new vec3(0.0f, 1.5f, 0.0f),
                 new vec3(0.0f, 1.0f, 0.0f));
             _projection = glm.perspective(glm.radians(60.0f), (float)Width / Height, 0.3f, 100.0f);
 
             InitBuffers();
 
-            //const string texName = "../../Textures/water2.jpg";
             const string texName = "../../Textures/fire.png";
-            //_texture = new Texture(texName, TextureWrapMode.ClampToEdge);
-            //_texture.Use();
-            GL.ActiveTexture(TextureUnit.Texture0);
-            var tex = Texture.LoadTexture(texName);
-
-           // _prog.Use();
-            _prog.SetInt("ParticleTex", 0);
-            _prog.SetFloat("ParticleLifetime", 4.0f);
-            _prog.SetVector3("Accel", new Vector3(0.0f, 0.1f, 0.0f));
-            SetMatrices(_prog);
+            //const string texName = "../../Textures/water2.jpg";
+            _texture = new Texture(texName, TextureWrapMode.Repeat, TextureUnit.Texture0, TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+            GL.Enable(EnableCap.PointSprite);
+            GL.PointParameter(PointParameterName.PointSpriteCoordOrigin, (int)PointSpriteCoordOriginParameter.LowerLeft);
+            _texture.Use();
+            
+            //GL.ActiveTexture(TextureUnit.Texture0);
+            //var tex = Texture.LoadTexture(texName);
+            _shader.SetInt("ParticleTex", 0);
+            _shader.SetFloat("ParticleLifetime", 4.0f);
+            _shader.SetVector3("Accel", new Vector3(0.0f, 0.1f, 0.0f));
+            SetMatrices(_shader);
 
             base.OnLoad(e);
         }
@@ -107,37 +103,36 @@ namespace ParticlesFire
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            //   Thread.Sleep(500);
+           // Thread.Sleep(200);
 
             t += dt;
             _deltaT = t - _time;
             _time = t;
-            _angle = (float)((_angle + 0.01f) % (2 * Math.PI));
+            //_angle = (float)((_angle + 0.01f) % (2 * Math.PI));
 
             // Update pass
-            GL.UniformSubroutines(ShaderType.VertexShader, 1, ref updateSub);
-            _prog.SetFloat("Time", _time);
-            _prog.SetFloat("H", _deltaT);
-            
+            GL.UniformSubroutines(ShaderType.VertexShader, 1, ref _updateSub);
+            _shader.SetFloat("Time", _time);
+            _shader.SetFloat("H", _deltaT);
+
             GL.Enable(EnableCap.RasterizerDiscard);
 
-            GL.BindTransformFeedback(TransformFeedbackTarget.TransformFeedback, _feedback[_drawBuf]);
-            GL.BeginTransformFeedback(TransformFeedbackPrimitiveType.Points);
-            GL.BindVertexArray(_particleVertexArray[1 - _drawBuf]);
-            GL.DrawArrays(PrimitiveType.Points, 0, _nParticles);
-            GL.EndTransformFeedback();
+            _feedback[_drawBuf].Bind();
+            _feedback[_drawBuf].Begin();
+            _particleVertexArray[1 - _drawBuf].Draw(PrimitiveType.Points, 0, _nParticles);
+            _feedback[_drawBuf].End();
             GL.Disable(EnableCap.RasterizerDiscard);
 
             // Render pass
-            GL.UniformSubroutines(ShaderType.VertexShader, 1, ref renderSub);
+            GL.UniformSubroutines(ShaderType.VertexShader, 1, ref _renderSub);
             GL.Clear(ClearBufferMask.ColorBufferBit);
             _view = glm.lookAt(new vec3(3.0f * glm.cos(_angle), 1.5f, 3.0f * glm.sin(_angle)),
-                        new vec3(0.0f, 1.5f, 0.0f),
+                            new vec3(0.0f, 1.5f, 0.0f),
                         new vec3(0.0f, 1.0f, 0.0f));
-            SetMatrices(_prog);
+            SetMatrices(_shader);
 
-            GL.BindVertexArray(_particleVertexArray[_drawBuf]);
-            GL.DrawTransformFeedback(PrimitiveType.Points, _feedback[_drawBuf]);
+            _particleVertexArray[_drawBuf].Bind();
+            _feedback[_drawBuf].Draw();
 
             // Swap _buffers
             _drawBuf = 1 - _drawBuf;
@@ -146,27 +141,41 @@ namespace ParticlesFire
 
         private void InitBuffers()
         {
-            _nParticles = 4000;
-
-
             // Generate the _buffers
-            GL.GenBuffers(2, _posBuf);    // position _buffers
-            GL.GenBuffers(2, _velBuf);    // velocity _buffers
-            GL.GenBuffers(2, _startTime); // Start _time _buffers
-            _initVel = GL.GenBuffer();
-
             // Allocate space for all _buffers
             int size = _nParticles * 3 * sizeof(float);
-            AllocateArrayBuffer(size, _posBuf[0], BufferUsageHint.DynamicCopy);
-            AllocateArrayBuffer(size, _posBuf[1], BufferUsageHint.DynamicCopy);
+            _posBuf = new[] {new ArrayBuffer(BufferUsageHint.DynamicCopy), new ArrayBuffer(BufferUsageHint.DynamicCopy) };
+            //_posBuf[0].Allocate(size);
+            //_posBuf[1] = new ArrayBuffer(BufferUsageHint.DynamicCopy);
+            //_posBuf[1].Allocate(size);
+            foreach (var buffer in _posBuf)
+            {
+                buffer.Allocate(size);
+            }
 
-            AllocateArrayBuffer(size, _velBuf[0], BufferUsageHint.DynamicCopy);
-            AllocateArrayBuffer(size, _velBuf[1], BufferUsageHint.DynamicCopy);
+            _velBuf = new[] { new ArrayBuffer(BufferUsageHint.DynamicCopy), new ArrayBuffer(BufferUsageHint.DynamicCopy) };
+            //_velBuf[0] = new ArrayBuffer(BufferUsageHint.DynamicCopy);
+            //_velBuf[0].Allocate(size);
+            //_velBuf[1] = new ArrayBuffer(BufferUsageHint.DynamicCopy);
+            //_velBuf[1].Allocate(size);
+            foreach (var buffer in _velBuf)
+            {
+                buffer.Allocate(size);
+            }
 
-            AllocateArrayBuffer(size, _initVel, BufferUsageHint.StaticDraw);
+            _initVel = new ArrayBuffer(BufferUsageHint.StaticDraw);
+            _initVel.Allocate(size);
 
-            AllocateArrayBuffer(size / 3, _startTime[0], BufferUsageHint.DynamicCopy);
-            AllocateArrayBuffer(size / 3, _startTime[1], BufferUsageHint.DynamicCopy);
+
+            _startTime = new[] { new ArrayBuffer(BufferUsageHint.DynamicCopy), new ArrayBuffer(BufferUsageHint.DynamicCopy) };
+            //_startTime[0] = new ArrayBuffer(BufferUsageHint.DynamicCopy);
+            //_startTime[0].Allocate(size / 3);
+            //_startTime[1] = new ArrayBuffer(BufferUsageHint.DynamicCopy);
+            //_startTime[1].Allocate(size / 3);
+            foreach (var buffer in _startTime)
+            {
+                buffer.Allocate(size/3);
+            }
 
             // Fill the first position buffer with zeroes
             var tempData = new float[_nParticles * 3];
@@ -176,10 +185,9 @@ namespace ParticlesFire
                 tempData[i] = Mix(-2.0f, 2.0f, rnd.NextDouble());
                 tempData[i + 1] = 0.0f;
                 tempData[i + 2] = 0.0f;
-
             }
 
-            CopyDataToArrayBuffer(tempData, _posBuf[0]);
+            _posBuf[0].SetData(tempData);
             // Fill the first velocity buffer with random velocities
 
             for (int i = 0; i < _nParticles * 3; i += 3)
@@ -187,10 +195,10 @@ namespace ParticlesFire
                 tempData[i] = 0.0f;
                 tempData[i + 1] = Mix(0.1f, 0.5f, rnd.NextDouble()); ;
                 tempData[i + 2] = 0.0f;
-
             }
-            CopyDataToArrayBuffer(tempData, _velBuf[0]);
-            CopyDataToArrayBuffer(tempData, _initVel);
+
+            _velBuf[0].SetData(tempData);
+            _initVel.SetData(tempData);
 
             // Fill the first start time buffer
             tempData = new float[_nParticles];
@@ -201,51 +209,51 @@ namespace ParticlesFire
                 tempData[i] = time;
                 time += rate;
             }
-            CopyDataToArrayBuffer(tempData, _startTime[0]);
+            _startTime[0].SetData(tempData);
             // Create vertex arrays for each set of _buffers
-            GL.GenVertexArrays(2, _particleVertexArray);
-
+            _particleVertexArray = new[] { new VertexArray(), new VertexArray()};
             // Set up particle array 0
-            GL.BindVertexArray(_particleVertexArray[0]);
+            _particleVertexArray[0].Bind();
 
-            SetFloatPointer(_posBuf[0], 0, 3);
-            SetFloatPointer(_velBuf[0], 1, 3);
-            SetFloatPointer(_startTime[0], 2, 1);
-            SetFloatPointer(_initVel, 3, 3);
+            _posBuf[0].SetAttribPointer(0, 3);
+            _velBuf[0].SetAttribPointer(1, 3);
+            _startTime[0].SetAttribPointer(2, 1);
+            _initVel.SetAttribPointer(3, 3);
 
-            GL.BindVertexArray(0);
+            _particleVertexArray[0].Unbind();
 
             // Set up particle array 1
+            _particleVertexArray[1].Bind();
 
-            GL.BindVertexArray(_particleVertexArray[1]);
+            _posBuf[1].SetAttribPointer(0, 3);
+            _velBuf[1].SetAttribPointer(1, 3);
+            _startTime[1].SetAttribPointer(2, 1);
+            _initVel.SetAttribPointer(3, 3);
 
-            SetFloatPointer(_posBuf[1], 0, 3);
-            SetFloatPointer(_velBuf[1], 1, 3);
-            SetFloatPointer(_startTime[1], 2, 1);
-            SetFloatPointer(_initVel, 3, 3);
-
-            GL.BindVertexArray(0);
+            _particleVertexArray[1].Unbind();
 
             // Setup the _feedback objects
-            GL.GenTransformFeedbacks(2, _feedback);
+            _feedback[0] = new TransformFeedback();
+            _feedback[1] = new TransformFeedback();
 
             // Transform _feedback 0
-            GL.BindTransformFeedback(TransformFeedbackTarget.TransformFeedback, _feedback[0]);
+            _feedback[0].Bind();
 
-            GL.BindBufferBase(BufferRangeTarget.TransformFeedbackBuffer, 0, _posBuf[0]);
-            GL.BindBufferBase(BufferRangeTarget.TransformFeedbackBuffer, 1, _velBuf[0]);
-            GL.BindBufferBase(BufferRangeTarget.TransformFeedbackBuffer, 2, _startTime[0]);
+            _posBuf[0].BindBase(BufferRangeTarget.TransformFeedbackBuffer, 0);
+            _velBuf[0].BindBase(BufferRangeTarget.TransformFeedbackBuffer, 1);
+            _startTime[0].BindBase(BufferRangeTarget.TransformFeedbackBuffer, 2);
 
-            GL.BindTransformFeedback(TransformFeedbackTarget.TransformFeedback, 0);
+            _feedback[0].UnBind();
 
             // Transform _feedback 1
-            GL.BindTransformFeedback(TransformFeedbackTarget.TransformFeedback, _feedback[1]);
 
-            GL.BindBufferBase(BufferRangeTarget.TransformFeedbackBuffer, 0, _posBuf[1]);
-            GL.BindBufferBase(BufferRangeTarget.TransformFeedbackBuffer, 1, _velBuf[1]);
-            GL.BindBufferBase(BufferRangeTarget.TransformFeedbackBuffer, 2, _startTime[1]);
+            _feedback[1].Bind();
 
-            GL.BindTransformFeedback(TransformFeedbackTarget.TransformFeedback, 0);
+            _posBuf[1].BindBase(BufferRangeTarget.TransformFeedbackBuffer, 0);
+            _velBuf[1].BindBase(BufferRangeTarget.TransformFeedbackBuffer, 1);
+            _startTime[1].BindBase(BufferRangeTarget.TransformFeedbackBuffer, 2);
+
+            _feedback[1].UnBind();
 
             int value = GL.GetInteger(GetPName.MaxTransformFeedbackBuffers);
             Console.WriteLine("MAX_TRANSFORM_FEEDBACK_BUFFERS = " + value);
@@ -268,69 +276,17 @@ namespace ParticlesFire
             base.OnUnload(e);
         }
 
-        private void SetFloatPointer(int bufferIndex, int index, int size)
-        {
-            GL.BindBuffer(BufferTarget.ArrayBuffer, bufferIndex);
-            GL.VertexAttribPointer(index, size, VertexAttribPointerType.Float, false, 0, IntPtr.Zero);
-            GL.EnableVertexAttribArray(index);
-        }
-
-        private void CopyDataToArrayBuffer(float[] data, int bufferIndex)
-        {
-            GL.BindBuffer(BufferTarget.ArrayBuffer, bufferIndex);
-            GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, data.Length * sizeof(float), data);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-        }
-
-        private void AllocateArrayBuffer(int size, int bufferIndex, BufferUsageHint hint)
-        {
-            GL.BindBuffer(BufferTarget.ArrayBuffer, bufferIndex);
-            GL.BufferData(BufferTarget.ArrayBuffer, size, IntPtr.Zero, hint);
-        }
-
         private float Mix(double x, double y, double a)
         {
             return (float)((1.0 - a) * x + a * y);
         }
 
-        private void SetMatrices(GLSLProgram prog)
+        private void SetMatrices(Shader prog)
         {
-
-
             prog.Use();
-
-
             mat4 mv = _view * _model;
             prog.SetMatrix4("MVP", (_projection * mv).ConvertToMatrix4());
-
-
-        }
-
-        private void compileAndLinkShader()
-        {
-            // LoadSource is a simple function that just loads all text from the file whose path is given.
-
-            var vertexShader = Shader.CreateShader("../../Shaders/fire.vert", ShaderType.VertexShader);
-            Shader.CompileShader(vertexShader);
-            var fragmentShader = Shader.CreateShader("../../Shaders/fire.frag", ShaderType.FragmentShader);
-            Shader.CompileShader(fragmentShader);
-
-            _prog = new GLSLProgram();
-            _prog.Attach(vertexShader, fragmentShader);
-            //////////////////////////////////////////////////////
-            // Setup the transform feedback (must be done before linking the program)
-            string[] outputNames = new string[] { "Position", "Velocity", "StartTime" };
-            GL.TransformFeedbackVaryings(_prog.GetHandle(), 3, outputNames, TransformFeedbackMode.SeparateAttribs);
-
-            _prog.Link();
-            _prog.Use();
-            _prog.GetUniforms();
-
-
-
-
-
-
         }
     }
 }
+

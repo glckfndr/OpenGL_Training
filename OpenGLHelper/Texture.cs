@@ -57,6 +57,7 @@ namespace OpenGLHelper
                 _height = image.Height;
                 var data = image.LockBits(new Rectangle(0, 0, _width, _height),
                     ImageLockMode.ReadWrite,
+                    //System.Drawing.Imaging.PixelFormat.Format24bppRgb);
                     System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
                 // Now that our pixels are prepared, it's time to generate a texture. We do this with GL.TexImage2D
@@ -97,6 +98,7 @@ namespace OpenGLHelper
             // We set this to Repeat so that textures will repeat when wrapped. Not demonstrated here since the texture coordinates exactly match
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int) mode);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int) mode);
+            
 
             // Next, generate mipmaps.
             // Mipmaps are smaller copies of the texture, scaled down. Each mipmap level is half the size of the previous one
@@ -125,6 +127,37 @@ namespace OpenGLHelper
                 (int) TextureMagFilter.Linear);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int) mode);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int) mode);
+        }
+
+
+        public Texture(int width, int height, byte[] data, TextureUnit textureUnit = TextureUnit.Texture0)
+        {
+            _width = width;
+            _height = height;
+            _unit = textureUnit;
+            _handle = GL.GenTexture();
+            Use();
+            // GL.ActiveTexture(TextureUnit.Texture0);
+            //  GL.BindTexture(TextureTarget.Texture2D, _handle);
+            GL.TexStorage2D(TextureTarget2d.Texture2D, 1, SizedInternalFormat.Rgba8, 
+                                _width, _height);
+            GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, _width, _height, 
+                    PixelFormat.Rgba, PixelType.UnsignedByte, data);
+        }
+
+        public Texture(int width, int height, TextureUnit textureUnit = TextureUnit.Texture0, 
+                        TextureMinFilter textureMinFilter = TextureMinFilter.Linear, TextureMagFilter textureMagFilter = TextureMagFilter.Linear)
+        {
+            _width = width;
+            _height = height;
+            _unit = textureUnit;
+            _handle = GL.GenTexture();
+            Use();
+
+            GL.TexStorage2D(TextureTarget2d.Texture2D, 1, SizedInternalFormat.Rgba8, _width, _height);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int) textureMinFilter);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)textureMagFilter);
         }
 
         // Activate texture
@@ -177,11 +210,9 @@ namespace OpenGLHelper
             return _handle;
         }
 
-        public void BindToFrameBuffer()
+        public void BindToFrameBuffer(FramebufferAttachment frameBufferAttachment = FramebufferAttachment.ColorAttachment0)
         {
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer,
-                FramebufferAttachment.ColorAttachment0,
-                TextureTarget.Texture2D, _handle, 0);
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, frameBufferAttachment, TextureTarget.Texture2D, _handle, 0);
         }
 
 

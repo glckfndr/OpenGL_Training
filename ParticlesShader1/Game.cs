@@ -12,14 +12,15 @@ namespace ParticlesFeedBack
     public class Game : GameWindow
     {
 
-        private Shader _shader;
+        private Shader _flatShader;
+        private Shader _particleShader;
         private ArrayBuffer[] _posBuf = new ArrayBuffer[2];
         private ArrayBuffer[] _velBuf = new ArrayBuffer[2];
         private ArrayBuffer[] _age = new ArrayBuffer[2];
 
         private VertexArray[] _particleVertexArray = new VertexArray[2];
         private TransformFeedback[] _feedback = new TransformFeedback[2];
-        
+
         private int _drawBuf = 1;
         private int _nParticles = 5400;
         private float _angle;
@@ -28,9 +29,9 @@ namespace ParticlesFeedBack
         private Grid _grid;
 
         private Texture _texture;
-        private float particleLifetime = 6;
+        private float particleLifetime = 4;
         private vec3 emitterPos = new vec3(0, 0, 0);
-        private vec3 emitterDir = new vec3(-1, 2, 0);
+        private vec3 emitterDir = new vec3(-1, 6, 0);
 
         private float t;
         private float dt = 0.01f;
@@ -38,9 +39,7 @@ namespace ParticlesFeedBack
         private mat4 _projection;
         private mat4 _view;
         private mat4 _model;
-        private GLSLProgram _prog;
-        private GLSLProgram _flatProg;
-
+       
         public Game(int width, int height, string title) : base(width, height, GraphicsMode.Default, title)
         {
 
@@ -48,8 +47,11 @@ namespace ParticlesFeedBack
 
         protected override void OnLoad(EventArgs e)
         {
-            CreateShaders();
-
+            _flatShader = new Shader("../../Shaders/flat.vert", "../../Shaders/flat.frag");
+            string[] feedbackVariables =  { "Position", "Velocity", "Age" };
+            _particleShader = new Shader("../../Shaders/particles.vert", "../../Shaders/particles.frag",
+                feedbackVariables);
+            
             _model = new mat4(1.0f);
             const string texName = "../../Textures/bluewater.png";
             _texture = new Texture(texName, TextureWrapMode.Repeat);
@@ -65,18 +67,15 @@ namespace ParticlesFeedBack
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
             InitBuffers();
+            _particleShader.SetInt("RandomTex", 1);
+            _particleShader.SetInt("ParticleTex", 0);
+            _particleShader.SetFloat("ParticleLifetime", particleLifetime);
+            _particleShader.SetVector3("Accel", new Vector3(0.0f, -0.5f, 0.0f));
+            _particleShader.SetFloat("ParticleSize", 0.03f);
+            _particleShader.SetVector3("Emitter", emitterPos.ConvertToVector3());
+            _particleShader.SetMatrix3("EmitterBasis", ParticleUtils.MakeArbitraryBasis(emitterDir).ConvertToMatrix3());
 
-           // _prog.Use();
-            _prog.SetInt("RandomTex", 1);
-            _prog.SetInt("ParticleTex", 0);
-            _prog.SetFloat("ParticleLifetime", particleLifetime);
-            _prog.SetVector3("Accel", new Vector3(0.0f, -0.5f, 0.0f));
-            _prog.SetFloat("ParticleSize", 0.03f);
-            _prog.SetVector3("Emitter", emitterPos.ConvertToVector3());
-            _prog.SetMatrix3("EmitterBasis", ParticleUtils.MakeArbitraryBasis(emitterDir).ConvertToMatrix3());
-
-            _flatProg.Use();
-            _flatProg.SetVector4("Color", new Vector4(0.3f, 0.3f, 0.3f, 1.0f));
+            _flatShader.SetVector4("Color", new Vector4(0.3f, 0.3f, 0.3f, 1.0f));
             base.OnLoad(e);
         }
 
@@ -102,19 +101,18 @@ namespace ParticlesFeedBack
             _angle = (float)((_angle + 0.01f) % (2 * Math.PI));
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            _flatProg.Use();
+            _flatShader.Use();
 
             _view = glm.lookAt(new vec3(4.0f * glm.cos(_angle), 1.5f, 4.0f * glm.sin(_angle)),
                             new vec3(0.0f, 1.5f, 0.0f),
                                 new vec3(0.0f, 1.0f, 0.0f));
-            SetMatrices(_flatProg);
+            SetMatrices(_flatShader);
             _grid.Render();
 
-            _prog.Use();
-            _prog.SetFloat("DeltaT", _deltaT);
+            _particleShader.SetFloat("DeltaT", _deltaT);
 
             // Update pass
-            _prog.SetInt("Pass", 1);
+            _particleShader.SetInt("Pass", 1);
 
             GL.Enable(EnableCap.RasterizerDiscard);
             _feedback[_drawBuf].Bind();
@@ -123,16 +121,15 @@ namespace ParticlesFeedBack
             GL.VertexAttribDivisor(0, 0);
             GL.VertexAttribDivisor(1, 0);
             GL.VertexAttribDivisor(2, 0);
-            GL.DrawArrays(PrimitiveType.Points, 0, _nParticles);
-            _particleVertexArray[1 - _drawBuf].Unbind();
+            _particleVertexArray[1 - _drawBuf].Draw(PrimitiveType.Points, 0, _nParticles);
 
             _feedback[_drawBuf].End();
             GL.Disable(EnableCap.RasterizerDiscard);
 
             // Render pass
-            _prog.SetInt("Pass", 2);
+            _particleShader.SetInt("Pass", 2);
 
-            SetMatrices(_prog);
+            SetMatrices(_particleShader);
 
             GL.DepthMask(false);
             _particleVertexArray[_drawBuf].Bind();
@@ -169,8 +166,8 @@ namespace ParticlesFeedBack
             _posBuf[1].Allocate(size);
             _velBuf[0].Allocate(size);
             _velBuf[1].Allocate(size);
-            _age[0].Allocate(size/3);
-            _age[1].Allocate(size/3);
+            _age[0].Allocate(size / 3);
+            _age[1].Allocate(size / 3);
 
             var tempData = new float[_nParticles];
             float rate = particleLifetime / _nParticles;
@@ -188,7 +185,7 @@ namespace ParticlesFeedBack
             _particleVertexArray[1] = new VertexArray();
 
             // Set up particle array 0
-            
+
             _particleVertexArray[0].Bind();
 
             _posBuf[0].SetAttribPointer(0, 3);
@@ -198,7 +195,7 @@ namespace ParticlesFeedBack
 
             // Set up particle array 1
             _particleVertexArray[1].Bind();
-            
+
             _posBuf[1].SetAttribPointer(0, 3);
             _velBuf[1].SetAttribPointer(1, 3);
             _age[1].SetAttribPointer(2, 1);
@@ -248,39 +245,12 @@ namespace ParticlesFeedBack
             return (float)((1.0 - a) * x + a * y);
         }
 
-        private void SetMatrices(GLSLProgram prog)
+        private void SetMatrices(Shader shader)
         {
-            prog.SetMatrix4("model", _model.ConvertToMatrix4());
-            prog.SetMatrix4("view", _view.ConvertToMatrix4());
-            prog.SetMatrix4("projection", _projection.ConvertToMatrix4());
+            shader.SetMatrix4("model", _model.ConvertToMatrix4());
+            shader.SetMatrix4("view", _view.ConvertToMatrix4());
+            shader.SetMatrix4("projection", _projection.ConvertToMatrix4());
         }
 
-        private void CreateShaders()
-        {
-            var vertexShader = Shader.CreateShader("../../Shaders/particles.vert", ShaderType.VertexShader);
-            Shader.CompileShader(vertexShader);
-            var fragmentShader = Shader.CreateShader("../../Shaders/particles.frag", ShaderType.FragmentShader);
-            Shader.CompileShader(fragmentShader);
-
-            _prog = new GLSLProgram();
-            _prog.Attach(vertexShader, fragmentShader);
-            //////////////////////////////////////////////////////
-            // Setup the transform feedback (must be done before linking the program)
-            string[] attributeNames = new string[] { "Position", "Velocity", "Age" };
-            TransformFeedback.Varyings(_prog.GetHandle(), attributeNames);
-
-            _prog.Link();
-            _prog.Use();
-            _prog.GetUniforms();
-
-            vertexShader = Shader.CreateShader("../../Shaders/flat.vert", ShaderType.VertexShader);
-            Shader.CompileShader(vertexShader);
-            fragmentShader = Shader.CreateShader("../../Shaders/flat.frag", ShaderType.FragmentShader);
-            Shader.CompileShader(fragmentShader);
-            _flatProg = new GLSLProgram();
-            _flatProg.Attach(vertexShader, fragmentShader);
-            _flatProg.Link();
-            _flatProg.GetUniforms();
-        }
     }
 }

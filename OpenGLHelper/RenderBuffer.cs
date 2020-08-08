@@ -15,11 +15,10 @@ namespace OpenGLHelper
 
         }
 
-        public void BindToFrameBuffer()
+        public void BindToFrameBuffer(FramebufferAttachment frameBufferAttachment = FramebufferAttachment.DepthAttachment)
         {
             // Bind the depth buffer to the FBO
-            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer,
-                                        FramebufferAttachment.DepthAttachment,
+            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, frameBufferAttachment,
                                         RenderbufferTarget.Renderbuffer, _handle);
         }
     }
