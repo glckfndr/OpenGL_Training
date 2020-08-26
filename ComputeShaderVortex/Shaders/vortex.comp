@@ -6,6 +6,7 @@ uniform float DeltaT = 0.0002;
 uniform float ds = 0.01;
 uniform int vortexNumber;
 uniform float gamma;
+uniform float ringRadius;
 
 layout(std430, binding = 0) buffer Pos 
 {
@@ -22,9 +23,17 @@ layout(std430, binding = 2) buffer Vortexes
   vec4 vortexPosition[];
 };
 
+layout(std430, binding = 3) buffer StartPos 
+{
+  vec4 StartPosition[];
+};
+
+#define PI 3.148
+const float koef = 1.0/4.0/PI;
 
 vec3 BioSavar(vec3 p, vec3 r0, vec3 r1)
 {
+
 	vec3 r = p - r0;
 	vec3 dl = r1 - r0;
 	float dist = length(r);
@@ -34,24 +43,45 @@ vec3 BioSavar(vec3 p, vec3 r0, vec3 r1)
 }
 
 
+vec3 BioSavar2(vec3 r, vec3 start, vec3 dl)
+{
+			vec3 a = r - start;
+            vec3 b = a - dl;
+            vec3 cros = cross(dl,a);
+            float c = length(cros);
+			if(c == 0.0)
+                return vec3(0);
+            return gamma * cros  / (c * c) * (dot(dl, a) / length(a) - dot(dl, b) / length(b));
+}
+
+
 void main() 
 {
   uint idx = gl_GlobalInvocationID.x;
 
   vec3 p = Position[idx].xyz;
   vec3 velocity = vec3(0.0, 0.0, 0.0);
-  for(int i = 0; i < vortexNumber - 1; i++)
+  for(int i = 0; i < vortexNumber; i++)
   {
     vec3 r0 = vortexPosition[i].xyz;
 	vec3 r1 = vortexPosition[i + 1].xyz;
-	velocity += BioSavar(p, r0, r1);
+	velocity += BioSavar2(p, r0, r1 - r0);
+	//velocity += BioSavar(p, r0, r1);
   }
-  velocity.z = 0;
+  //velocity.z = 0;
   //Velocity[idx].x = 0.0;
   //Velocity[idx].y = 0.0;
   //Velocity[idx].z = 0.99;
+
+  vec3 newPosition = p + velocity * DeltaT;
+  vec3 pointOnRing = ringRadius*normalize(StartPosition[idx].xyz);
+
   Velocity[idx] = vec4(velocity, 1);
-  Position[idx] = vec4(p + velocity * DeltaT , 1);
+
+  if(length(newPosition-pointOnRing) <= 1.1*length(StartPosition[idx].xyz-pointOnRing))
+		Position[idx] = vec4(newPosition , 1);
+   else 
+		Position[idx] = StartPosition[idx];
   
   
 }

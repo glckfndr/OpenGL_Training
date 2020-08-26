@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{7E626FBA-4139-439F-ADEC-3982DFCCB73F}</ProjectGuid>
+    <ProjectGuid>{5E9E085E-98FE-4C63-9FE7-909CBCAF7F22}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>ComputeShaderTestSpeed</RootNamespace>
-    <AssemblyName>ComputeShaderTestSpeed</AssemblyName>
+    <RootNamespace>ComputeShaderTwoVortexRing</RootNamespace>
+    <AssemblyName>ComputeShaderTwoVortexRing</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -17,7 +17,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -33,11 +33,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="GlmNet, Version=0.7.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\GlmNet.0.7.0\lib\net40\GlmNet.dll</HintPath>
+    </Reference>
     <Reference Include="OpenTK, Version=3.2.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <HintPath>..\packages\OpenTK.3.2\lib\net20\OpenTK.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -49,12 +53,22 @@
     <Compile Include="Game.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Vector3D.cs" />
+    <Compile Include="VortexCurve.cs" />
+    <Compile Include="VortexPoint.cs" />
+    <Compile Include="VortexSegment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
-    <None Include="shader.comp" />
+    <None Include="Shaders\ads.frag" />
+    <None Include="Shaders\ads.vert" />
+    <None Include="Shaders\particles.frag" />
+    <None Include="Shaders\particles.vert" />
+    <None Include="Shaders\twoRing.comp" />
+    <None Include="Shaders\vortex.frag" />
+    <None Include="Shaders\vortex.vert" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OpenGLHelper\OpenGLHelper.csproj">

@@ -7,7 +7,7 @@ using OpenTK.Input;
 using System;
 using System.Collections.Generic;
 
-namespace ComputeShaderVortex
+namespace ComputeShaderTwoVortexRing
 {
     public class Game : GameWindow
     {
@@ -18,13 +18,19 @@ namespace ComputeShaderVortex
         private Shader _computeShader;
         private vec3 nParticles = new vec3(50, 50, 50);
         private int totalParticles;
-        private int vortexNumber = 72;
-        private float eyePos = 3.0f;
+        private int _ringPointsNumber = 72*2;
+        
 
-        private StorageBuffer posBuf;
-        private StorageBuffer startPosBuf;
-        private StorageBuffer velBuf;
-        private StorageBuffer vortexBuf;
+        private StorageBuffer _particlePositionBuffer;
+        private StorageBuffer _initialParticlePositionBuffer;
+        private StorageBuffer _particleVelocityBuffer;
+
+        private StorageBuffer _ring1Buffer;
+        private StorageBuffer _ring2Buffer;
+
+        private VortexCurve _ring1;
+        private VortexCurve _ring2;
+
         private float _gamma = 0.1f;
 
         private float _time;
@@ -33,7 +39,8 @@ namespace ComputeShaderVortex
         private float _angle;
 
         private VertexArray _particleVAO;
-        private VertexArray _vortexVAO;
+        private VertexArray _vortexVAO1;
+        private VertexArray _vortexVAO2;
 
         private float t;
         private float dt;
@@ -43,9 +50,11 @@ namespace ComputeShaderVortex
         private Sphere _sphere1;
         private Sphere _sphere2;
         private double outDeltaR = 0.15f;
-        private double innerDeltaR = 0.15f;
+        private double innerDeltaR = 0.5f;
+        private float eyePos = 2.0f;
 
-        private double _ringRadius = 1.0;
+        private double _ring1Radius = 0.6;
+        private double _ring2Radius = 0.4;
 
         public Game(int width, int height, string title) : base(width, height, GraphicsMode.Default, title)
         {
@@ -54,16 +63,19 @@ namespace ComputeShaderVortex
 
         protected override void OnLoad(EventArgs e)
         {
+            _ring1 = new VortexCurve(-1.0, _ringPointsNumber, _ring1Radius,-0.1);
+            _ring2 = new VortexCurve(0.5, _ringPointsNumber, _ring2Radius, 0.0);
             _model = new mat4(1.0f);
             GL.Enable(EnableCap.DepthTest);
             totalParticles = (int)(nParticles.x * nParticles.y * nParticles.z);
             _particleShader = new Shader("../../Shaders/particles.vert", "../../Shaders/particles.frag");
             _vortexShader = new Shader("../../Shaders/vortex.vert", "../../Shaders/vortex.frag");
 
-            _computeShader = new Shader("../../Shaders/vortex.comp");
-            _computeShader.SetInt("vortexNumber", vortexNumber + 1);
-            _computeShader.SetFloat("ringRadius",(float) _ringRadius);
-            _computeShader.SetFloat("gamma", _gamma);
+            _computeShader = new Shader("../../Shaders/twoRing.comp");
+            _computeShader.SetInt("ringPointsNumber", _ringPointsNumber + 1);
+          //  _computeShader.SetFloat("ring1Radius",(float) _ring1Radius);
+          //  _computeShader.SetFloat("ring2Radius", (float)_ring2Radius);
+            //_computeShader.SetFloat("gamma", _gamma);
             InitBuffers();
 
             GL.ClearColor(0, 0.0f, 0.0f, 1);
@@ -96,16 +108,27 @@ namespace ComputeShaderVortex
             t += 0.005f;
 
             // Execute the compute shader
+            _ring1.InVelocity(_ring2);
+            _ring2.InVelocity(_ring1);
+            _ring1.Move();
+            _ring2.Move();
+
             _computeShader.Use();
-            posBuf.Bind(0);
-            velBuf.Bind(1);
-            vortexBuf.Bind(2);
-            startPosBuf.Bind(3);
 
-            _computeShader.SetInt("vortexNumber", vortexNumber);
-            _computeShader.SetFloat("gamma", _gamma);
 
-           for (int k = 0; k < 3; k++)
+            _particlePositionBuffer.Bind(0);
+            _particleVelocityBuffer.Bind(1);
+
+            _ring1Buffer.SubData(_ring1.ToVortexPointArray(),2);
+            _ring2Buffer.SubData(_ring2.ToVortexPointArray(),3);
+            
+
+            _initialParticlePositionBuffer.Bind(4);
+
+            _computeShader.SetInt("ringPointsNumber", _ringPointsNumber);
+           // _computeShader.SetFloat("gamma", _gamma);
+
+           for (int k = 0; k < 2; k++)
                 _computeShader.Compute(MemoryBarrierFlags.ShaderStorageBarrierBit, 
                                 totalParticles / 100, 1, 1);
 
@@ -118,10 +141,14 @@ namespace ComputeShaderVortex
             GL.PointSize(1.0f);
             _particleVAO.Draw(PrimitiveType.Points, 0, totalParticles);
             // Draw the vortexes
+
             _vortexShader.Use();
-            _vortexShader.SetVector4("Color", new Vector4(0.7f, 0.9f, 0.3f, 0.8f));
-            //velBuf.SetAttribPointer(2, totalParticles);
-            _vortexVAO.Draw(PrimitiveType.LineLoop, 0, vortexNumber);
+            _vortexShader.SetVector4("Color", new Vector4(0.7f, 0.0f, 0.3f, 0.8f));
+            //_particleVelocityBuffer.SetAttribPointer(2, totalParticles);
+            _vortexVAO1.Draw(PrimitiveType.LineLoop, 0, _ringPointsNumber);
+
+            _vortexShader.SetVector4("Color", new Vector4(0.0f, 0.9f, 0.8f, 0.8f));
+            _vortexVAO2.Draw(PrimitiveType.LineLoop, 0, _ringPointsNumber);
 
 
             Context.SwapBuffers();
@@ -136,71 +163,50 @@ namespace ComputeShaderVortex
             //int bufSize = totalParticles * 4 * sizeof(float);
 
             // The _buffers for positions
-            List<float> initialPosition = GetInitialPosition2(_ringRadius);
+            List<float> initialPosition = GetInitialPositionForParticles(_ring1Radius);
 
-            posBuf = new StorageBuffer(BufferUsageHint.DynamicDraw);
-            posBuf.SetData(initialPosition.ToArray(), 0);
+            _particlePositionBuffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
+            _particlePositionBuffer.SetData(initialPosition.ToArray(), 0);
 
             var vel = GetInitialVelocity();
-            velBuf = new StorageBuffer(BufferUsageHint.DynamicDraw);
-            velBuf.SetData(vel.ToArray(), 1);
+            _particleVelocityBuffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
+            _particleVelocityBuffer.SetData(vel.ToArray(), 1);
 
-            List<float> vortexPosition = GetVortexPosition(vortexNumber);
-            vortexBuf = new StorageBuffer(BufferUsageHint.DynamicDraw);
-            vortexBuf.SetData(vortexPosition.ToArray(), 2);
+            //_ring1Position = GetVortexRing(_ringPointsNumber, (float)_ringRadius1);
+            _ring1Buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
+            _ring1Buffer.SetData(_ring1.ToVortexPointArray(), 2);
 
-            startPosBuf = new StorageBuffer(BufferUsageHint.StaticDraw);
-            startPosBuf.SetData(initialPosition.ToArray(), 3);
+           // _ring2Buffer = GetVortexRing(_ringPointsNumber, (float)_ring2Radius, 1.0f);
+            _ring2Buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
+            _ring2Buffer.SetData(_ring2.ToVortexPointArray(), 3);
+
+            _initialParticlePositionBuffer = new StorageBuffer(BufferUsageHint.StaticDraw);
+            _initialParticlePositionBuffer.SetData(initialPosition.ToArray(), 4);
 
 
             // Set up the VAO
             _particleVAO = new VertexArray();
             _particleVAO.Bind();
 
-            posBuf.SetAttribPointer(0, 4);
-            velBuf.SetAttribPointer(1, 4);
+            _particlePositionBuffer.SetAttribPointer(0, 4);
+            _particleVelocityBuffer.SetAttribPointer(1, 4);
 
             _particleVAO.Unbind();
 
 
             // Set up a buffer and a VAO for drawing the vortexes
-            _vortexVAO = new VertexArray(); ;
-            _vortexVAO.Bind();
-
-            vortexBuf.SetAttribPointer(0, 4);
-            _vortexVAO.Unbind();
-        }
-
-        private List<float> GetVortexPosition(int n)
-        {
-            List<float> lst = new List<float>(n);
+            _vortexVAO1 = new VertexArray(); ;
+            _ring1Buffer.SetAttribPointer(0, 4);
             
-            var dfi = 2 * Math.PI / n;
-            for (int i = 0; i < n; i++)
-            {
+            _vortexVAO1.Unbind();
 
-
-                var x = (float)(_ringRadius * Math.Cos(i * dfi));
-                var y = 0;
-                var z = (float)(_ringRadius * Math.Sin(i * dfi));
-                var w = 1.0f;
-
-                lst.Add(x);
-                lst.Add(y);
-                lst.Add(z);
-                lst.Add(w);
-
-            }
-
-            lst.Add(lst[0]);
-            lst.Add(lst[1]);
-            lst.Add(lst[2]);
-            lst.Add(lst[3]);
-
-            return lst;
+            _vortexVAO2 = new VertexArray(); ;
+            _ring2Buffer.SetAttribPointer(0, 4);
+            _vortexVAO2.Unbind();
         }
 
-        private List<float> GetInitialPosition2(double ringRadius)
+        
+        private List<float> GetInitialPositionForParticles(double ringRadius)
         {
             List<float> initialPosition = new List<float>();
             var rnd = new Random();
@@ -285,7 +291,8 @@ namespace ComputeShaderVortex
 
         private void SetMatrices()
         {
-            _view = glm.lookAt(new vec3(3, eyePos, 0), new vec3(0, 0, 0), new vec3(0, 1, 0));
+
+            _view = glm.lookAt(new vec3((float)(4*_ring1Radius), eyePos, 0), new vec3(0, 0, 0), new vec3(0, 1, 0));
             //_model = new mat4(1.0f);
             _particleShader.Use();
             _particleShader.SetMatrix4("model", _model.ConvertToMatrix4());

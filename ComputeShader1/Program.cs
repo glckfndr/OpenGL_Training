@@ -7,7 +7,7 @@ namespace ComputeShaderGravity
         private static void Main(string[] args)
         {
             // This line creates a new instance, and wraps the instance in a using statement so it's automatically disposed once we've exited the block.
-            using (Game game = new Game(800, 800, "Рух мільйона частинок біля центрів гравітації"))
+            using (Game game = new Game(1368, 768, "Рух мільйона частинок біля центрів гравітації"))
             {
                 //Run takes a double, which is how many frames per second it should strive to reach.
                 //You can leave that out and it'll just update as fast as the hardware will allow it.

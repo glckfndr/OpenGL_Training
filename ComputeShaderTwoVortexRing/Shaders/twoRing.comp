@@ -1,0 +1,87 @@
+﻿#version 430
+
+layout( local_size_x = 100 ) in;
+
+uniform float DeltaT = 0.00025;
+//uniform float ds = 0.01;
+uniform int ringPointsNumber;
+//uniform float ring1Radius;
+//uniform float ring2Radius;
+
+ struct VortexPoint
+{
+        vec3 r;
+        float gamma;
+		//float dummy;
+};
+
+layout(std430, binding = 0) buffer ParticlesPosition
+{
+  vec4 particlePosition[];
+};
+
+layout(std430, binding = 1) buffer ParticleVelocity 
+{
+  vec4 particleVelocity[];
+};
+
+layout(std430, binding = 2) buffer VortexRing1 
+{
+  VortexPoint ring1Position[];
+};
+
+layout(std430, binding = 3) buffer VortexRing2 
+{
+  VortexPoint ring2Position[];
+};
+
+layout(std430, binding = 4) buffer StartPosition 
+{
+  vec4 startPosition[];
+};
+
+#define PI 3.14159265
+const float koef = 1.0/4.0/PI;
+
+
+vec3 BioSavar(vec3 r, vec3 start, vec3 dl, float gamma)
+{
+			vec3 a = r - start;
+            vec3 b = a - dl;
+            vec3 cros = cross(dl,a);
+            float c = length(cros);
+			if(c == 0.0)
+                return vec3(0);
+            return gamma* koef * cros  / (c * c) * (dot(dl, a) / length(a) - dot(dl, b) / length(b));
+}
+
+
+void main() 
+{
+  uint idx = gl_GlobalInvocationID.x;
+  
+  vec3 p = particlePosition[idx].xyz;
+  vec3 velocity = vec3(0.0, 0.0, 0.0);
+  for(int i = 0; i < ringPointsNumber; i++)
+  {
+    vec3 r0 = ring1Position[i].r.xyz;
+	vec3 r1 = ring1Position[i + 1].r.xyz;
+	float g = ring1Position[i].gamma;
+	velocity += BioSavar(p, r0, r1 - r0,g);
+
+	r0 = ring2Position[i].r.xyz;
+	r1 = ring2Position[i + 1].r.xyz;
+	g = ring2Position[i].gamma;
+	velocity += BioSavar(p, r0, r1 - r0,g);
+  }
+  particleVelocity[idx] = vec4(velocity, 1);
+
+  vec3 newPosition = p + velocity * DeltaT;
+  //vec3 pointOnRing = ring1Radius*normalize(startPosition[idx].xyz);
+  //if(length(newPosition-pointOnRing) <= 1.1*length(startPosition[idx].xyz-pointOnRing))
+	particlePosition[idx] = vec4(newPosition , 1);
+  //else 
+	//	particlePosition[idx] = startPosition[idx];
+  
+  
+}

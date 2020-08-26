@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{7E626FBA-4139-439F-ADEC-3982DFCCB73F}</ProjectGuid>
+    <ProjectGuid>{CDAFB18C-1FEB-4ECC-B7EE-4AFE71AAA1EB}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>ComputeShaderTestSpeed</RootNamespace>
-    <AssemblyName>ComputeShaderTestSpeed</AssemblyName>
+    <RootNamespace>ComputeShaderTestUniform</RootNamespace>
+    <AssemblyName>ComputeShaderTestUniform</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -54,7 +54,7 @@
     <None Include="App.config" />
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
-    <None Include="shader.comp" />
+    <None Include="shaderUniform.comp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OpenGLHelper\OpenGLHelper.csproj">

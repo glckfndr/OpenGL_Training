@@ -47,5 +47,13 @@ namespace OpenGLHelper
             GL.BufferData(BufferTarget.UniformBuffer, _arraySize * Marshal.SizeOf(data[0]), data, _usage);
             //GL.BufferData(BufferTarget.UniformBuffer, Buffer.ByteLength(data), data, _usage);
         }
+
+        public void SetMatrix(float[,] data, int index) 
+        {
+            _arraySize = data.Length;
+            Bind(index);
+            GL.BufferData(BufferTarget.UniformBuffer,  _arraySize* Marshal.SizeOf(data[0,0]), data, _usage);
+            //GL.BufferData(BufferTarget.UniformBuffer, Buffer.ByteLength(data), data, _usage);
+        }
     }
 }

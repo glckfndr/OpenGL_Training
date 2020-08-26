@@ -46,6 +46,15 @@ namespace OpenGLHelper
             GL.BufferData(BufferTarget.ShaderStorageBuffer, _arraySize * Marshal.SizeOf(data[0]), data, _usage);
         }
 
+
+        public void SubData<T>(T[] data, int index) where T : struct
+        {
+            _arraySize = data.Length;
+            Bind(index);
+            //GL.BufferData(BufferTarget.ShaderStorageBuffer, Buffer.ByteLength(data), data, _usage);
+            GL.BufferSubData(BufferTarget.ShaderStorageBuffer,IntPtr.Zero , _arraySize * Marshal.SizeOf(data[0]), data);
+        }
+
         public void Allocate<T>(T[] data, int index)
         {
             _arraySize = data.Length;
@@ -110,7 +119,7 @@ namespace OpenGLHelper
             return array;
         }
 
-        public Vector4[] GetVectorData()
+        public Vector4[] GetVector4Data()
         {
             // Read back the output buffer to check the results
             // Copy the data to our CPU located memory buffer
@@ -135,5 +144,24 @@ namespace OpenGLHelper
             return array;
         }
 
+        public Vector2[] GetVector2Data()
+        {
+            Bind();
+            Vector2[] array = new Vector2[_arraySize];
+
+            unsafe
+            {
+                var data = (Vector2*)GL.MapBuffer(BufferTarget.ShaderStorageBuffer, BufferAccess.ReadOnly);
+                fixed (Vector2* pointer = array) // Obtain a pointer to the output buffer data
+                {
+                    for (int i = 0; i < _arraySize; i++)
+                    {
+                        pointer[i] = data[i];
+                    }
+                }
+                GL.UnmapBuffer(BufferTarget.ShaderStorageBuffer);
+            }
+            return array;
+        }
     }
 }
