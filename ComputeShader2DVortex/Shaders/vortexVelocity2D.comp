@@ -1,0 +1,49 @@
+﻿#version 430
+layout(local_size_x = 128) in;
+
+//uniform float DeltaT = 0.0002;
+uniform int vortexNumber;
+
+struct Vortex
+{
+	vec2 r;
+	float gamma;
+	float rankinRadius;
+};
+
+layout(std430, binding = 0) buffer VortexData 
+{
+	Vortex vortex[];
+};
+
+layout(std430, binding = 1) buffer VortexVelocity 
+{
+	vec2 vortexVelocity[];
+};
+
+
+#define PI 3.148
+const float koef = 1.0/2.0/PI;
+
+vec2 Velocity2D(vec2 r, Vortex vortex)
+{
+	vec2 dr = r - vortex.r;
+	float dist = length(dr);
+	float selector = step(vortex.rankinRadius, dist);
+	dist = selector * dist + (1 - selector)*vortex.rankinRadius;
+	return koef*vortex.gamma * vec2( -dr.y, dr.x)/(dist*dist);
+
+}
+
+void main() 
+{
+  uint idx = gl_GlobalInvocationID.x;
+
+  vec2 p = vortex[idx].r;
+  vec2 velocity = vec2(0.0, 0.0);
+  for(int i = 0; i < vortexNumber; i++)
+  {
+	velocity += Velocity2D(p, vortex[i]);
+  }
+	vortexVelocity[idx] = velocity;
+}

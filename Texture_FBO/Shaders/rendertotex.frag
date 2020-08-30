@@ -6,13 +6,15 @@ in vec2 TexCoord;
 
 uniform sampler2D RenderTex;
 
-struct LightInfo {
+struct LightInfo 
+{
   vec4 Position;  // Light position in eye coords.
   vec3 Intensity; // A,D,S intensity
 };
 uniform LightInfo Light;
 
-struct MaterialInfo {
+struct MaterialInfo 
+{
   vec3 Ka;            // Ambient reflectivity
   vec3 Kd;            // Diffuse reflectivity
   vec3 Ks;            // Specular reflectivity
@@ -22,7 +24,8 @@ uniform MaterialInfo Material;
 
 layout( location = 0 ) out vec4 FragColor;
 
-vec3 phongModel( vec3 pos, vec3 norm ) {
+vec3 phongModel( vec3 pos, vec3 norm ) 
+{
     vec3 s = normalize(vec3(Light.Position) - pos);
     vec3 v = normalize(-pos.xyz);
     vec3 r = reflect( -s, norm );
@@ -37,7 +40,8 @@ vec3 phongModel( vec3 pos, vec3 norm ) {
     return ambient + diffuse + spec;
 }
 
-void main() {
+void main() 
+{
     vec4 texColor = texture( RenderTex, TexCoord );
     FragColor = vec4( phongModel(Position,Normal), 1.0 ) *
                       texColor;

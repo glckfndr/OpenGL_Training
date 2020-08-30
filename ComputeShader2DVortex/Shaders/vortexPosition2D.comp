@@ -1,0 +1,30 @@
+﻿#version 430
+layout(local_size_x = 128) in;
+
+uniform float deltaTime = 0.0002;
+//uniform int vortexNumber;
+
+struct Vortex
+{
+        vec2 r;
+        float gamma;
+		float rankineRadius;
+};
+
+layout(std430, binding = 0) buffer VortexData 
+{
+  Vortex vortex[];
+};
+
+layout(std430, binding = 1) buffer VortexVelocity 
+{
+  vec2 vortexVelocity[];
+};
+
+void main() 
+{
+  uint idx = gl_GlobalInvocationID.x;
+  vec2 p = vortex[idx].r;
+  p += vortexVelocity[idx] * deltaTime;
+  vortex[idx].r = p;
+}

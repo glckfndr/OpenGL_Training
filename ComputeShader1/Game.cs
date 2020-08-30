@@ -50,6 +50,7 @@ namespace ComputeShaderGravity
             _shader = new Shader("../../Shaders/particles.vert", "../../Shaders/particles.frag");
 
             _adsShader = new Shader("../../Shaders/ads.vert", "../../Shaders/ads.frag");
+
             _computeShader = new Shader("../../Shaders/particles.comp");
             _sphere1 = new Sphere(0.2f,32,32);
             _sphere2 = new Sphere(0.2f, 32, 32);
@@ -112,7 +113,7 @@ namespace ComputeShaderGravity
 
             float[] data = new float[] { att1.x, att1.y, att1.z, 1.0f, att2.x, att2.y, att2.z, 1.0f };
 
-            _blackHoleBuffer.SetSubData(IntPtr.Zero, data.Length * sizeof(float), data);
+           // _blackHoleBuffer.SetSubData(IntPtr.Zero, data.Length * sizeof(float), data);
             _adsShader.Use();
             _adsShader.SetVector3("LightIntensity", new Vector3(0.95f, 0.95f, 2.0f));
             _adsShader.SetVector3("Kd", new Vector3(0.2f, 0.2f, 0.9f));
@@ -176,12 +177,12 @@ namespace ComputeShaderGravity
 
 
             // Set up a buffer and a VAO for drawing the attractors (the "black holes")
-            _blackHoleBuffer = new ArrayBuffer(BufferUsageHint.DynamicDraw);
-            _blackHoleBuffer.Allocate(8 * sizeof(float));
+           //_blackHoleBuffer = new ArrayBuffer(BufferUsageHint.DynamicDraw);
+           // _blackHoleBuffer.Allocate(8 * sizeof(float));
 
-            _blackHoleVAO = new VertexArray();
-            _blackHoleBuffer.SetAttribPointer(0, 4);
-            _blackHoleVAO.Unbind();
+            //_blackHoleVAO = new VertexArray();
+            //_blackHoleBuffer.SetAttribPointer(0, 4);
+            //_blackHoleVAO.Unbind();
         }
 
         private List<float> GetInitialPosition()

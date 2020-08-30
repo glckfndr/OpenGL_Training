@@ -30,7 +30,7 @@ vec2 Velocity(vec2 r, vec4 vortex)
 	float dist = length(dr);
 	float selector = step(vortex.z, dist);
 	dist = selector * dist + (1 - selector)*vortex.z;
-	return vortex.w * vec2( -vortex.y, vortex.x)/(dist*dist);
+	return vortex.w * vec2( -dr.y, dr.x)/(dist*dist);
 
 }
 

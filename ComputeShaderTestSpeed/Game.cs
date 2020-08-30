@@ -133,7 +133,7 @@ namespace ComputeShaderTestSpeed
             float dist = dr.Length;
             float selector = Step(vortex.Z, dist);
             dist = selector * dist + (1 - selector) * vortex.Z;
-            return vortex.W * new Vector2(-vortex.Y, vortex.X) / (dist * dist);
+            return vortex.W * new Vector2(-dr.Y, dr.X) / (dist * dist);
 
         }
 
@@ -143,7 +143,7 @@ namespace ComputeShaderTestSpeed
             float dist = dr.Length;
             float selector = Step(vortex.radius, dist);
             dist = selector * dist + (1 - selector) * vortex.radius;
-            return vortex.gamma * new Vector2(-vortex.r.Y, vortex.r.X) / (dist * dist);
+            return vortex.gamma * new Vector2(-dr.Y, dr.X) / (dist * dist);
 
         }
 

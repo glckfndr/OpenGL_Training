@@ -121,7 +121,7 @@ namespace ComputeShaderVortex
             _vortexShader.Use();
             _vortexShader.SetVector4("Color", new Vector4(0.7f, 0.9f, 0.3f, 0.8f));
             //velBuf.SetAttribPointer(2, totalParticles);
-            _vortexVAO.Draw(PrimitiveType.LineLoop, 0, vortexNumber);
+           // _vortexVAO.Draw(PrimitiveType.LineLoop, 0, vortexNumber);
 
 
             Context.SwapBuffers();

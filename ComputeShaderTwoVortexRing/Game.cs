@@ -21,6 +21,7 @@ namespace ComputeShaderTwoVortexRing
         private int _ringPointsNumber = 72*2;
         
 
+
         private StorageBuffer _particlePositionBuffer;
         private StorageBuffer _initialParticlePositionBuffer;
         private StorageBuffer _particleVelocityBuffer;
@@ -47,14 +48,17 @@ namespace ComputeShaderTwoVortexRing
         private mat4 _projection;
         private mat4 _view;
         private mat4 _model;
-        private Sphere _sphere1;
-        private Sphere _sphere2;
+        private Torus _torus1;
+       // private Sphere _sphere2;
         private double outDeltaR = 0.15f;
         private double innerDeltaR = 0.5f;
-        private float eyePos = 2.0f;
+        private float _yEyePos = 2.0f;
+        private float _xEyePos = 3.0f;
 
         private double _ring1Radius = 0.6;
         private double _ring2Radius = 0.4;
+        private float _ringAlpha = 1;
+        private float _yTranslate =0.01f;
 
         public Game(int width, int height, string title) : base(width, height, GraphicsMode.Default, title)
         {
@@ -64,10 +68,15 @@ namespace ComputeShaderTwoVortexRing
         protected override void OnLoad(EventArgs e)
         {
             _ring1 = new VortexCurve(-1.0, _ringPointsNumber, _ring1Radius,-0.1);
-            _ring2 = new VortexCurve(0.5, _ringPointsNumber, _ring2Radius, 0.0);
+            _ring2 = new VortexCurve(0.2, _ringPointsNumber, _ring2Radius, 0.0);
             _model = new mat4(1.0f);
             GL.Enable(EnableCap.DepthTest);
             totalParticles = (int)(nParticles.x * nParticles.y * nParticles.z);
+
+            //_torus1 = new Torus(0.5f,0.01f, 36,72);
+            _adsShader = new Shader("../../Shaders/ads.vert", "../../Shaders/ads.frag");
+
+
             _particleShader = new Shader("../../Shaders/particles.vert", "../../Shaders/particles.frag");
             _vortexShader = new Shader("../../Shaders/vortex.vert", "../../Shaders/vortex.frag");
 
@@ -86,6 +95,43 @@ namespace ComputeShaderTwoVortexRing
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             base.OnLoad(e);
+        }
+
+        protected override void OnUpdateFrame(FrameEventArgs e)
+        {
+            KeyboardState input = Keyboard.GetState();
+
+            if (input.IsKeyDown(Key.Escape))
+            {
+                Exit();
+            }
+            if (input.IsKeyDown(Key.Up))
+            {
+                _yEyePos += 0.05f;
+            }
+
+            if (input.IsKeyDown(Key.Down))
+            {
+                _yEyePos -= 0.05f;
+            }
+            if (input.IsKeyDown(Key.W))
+            {
+                _xEyePos += 0.05f;
+            }
+            if (input.IsKeyDown(Key.S))
+            {
+                _xEyePos -= 0.05f;
+            }
+            if (input.IsKeyDown(Key.A))
+            {
+                _ringAlpha = 1;
+            }
+            if (input.IsKeyDown(Key.D))
+            {
+                _ringAlpha = 0;
+            }
+            
+            base.OnUpdateFrame(e);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -143,13 +189,29 @@ namespace ComputeShaderTwoVortexRing
             // Draw the vortexes
 
             _vortexShader.Use();
-            _vortexShader.SetVector4("Color", new Vector4(0.7f, 0.0f, 0.3f, 0.8f));
+            _vortexShader.SetVector4("Color", new Vector4(0.7f, 0.0f, 0.3f, _ringAlpha));
             //_particleVelocityBuffer.SetAttribPointer(2, totalParticles);
+            GL.LineWidth(5.0f);
             _vortexVAO1.Draw(PrimitiveType.LineLoop, 0, _ringPointsNumber);
 
-            _vortexShader.SetVector4("Color", new Vector4(0.0f, 0.9f, 0.8f, 0.8f));
+            _vortexShader.SetVector4("Color", new Vector4(0.0f, 0.9f, 0.8f, _ringAlpha));
             _vortexVAO2.Draw(PrimitiveType.LineLoop, 0, _ringPointsNumber);
 
+
+            _adsShader.Use();
+            _adsShader.SetVector3("LightIntensity", new Vector3(0.95f, 0.95f, 2.0f));
+            _adsShader.SetVector3("Kd", new Vector3(0.9f, 0.9f, 0.1f));
+            _adsShader.SetVector3("Ka", new Vector3(0.1f, 0.1f, 0.2f));
+            _adsShader.SetVector3("Ks", new Vector3(1.0f, 0.5f, 0.0f));
+            _adsShader.SetFloat("Shininess", 30.0f);
+
+            var lp = new Vector4(10.0f, 10.0f, 10.0f, 1.0f);
+            var view = _view.ConvertToMatrix4();
+
+            _adsShader.SetVector4("LightPosition", view * lp);
+            // _torus1.Render();
+            _torus1 = new Torus((float)_ring2.GetRadius(), 0.005f, 18,72);
+            _torus1.Render();
 
             Context.SwapBuffers();
             base.OnRenderFrame(e);
@@ -265,34 +327,14 @@ namespace ComputeShaderTwoVortexRing
             return lst;
         }
 
-        protected override void OnUpdateFrame(FrameEventArgs e)
-        {
-            KeyboardState input = Keyboard.GetState();
-
-            if (input.IsKeyDown(Key.Escape))
-            {
-                Exit();
-            }
-
-            if (input.IsKeyDown(Key.Up))
-            {
-                eyePos += 0.1f;
-            }
-
-            if (input.IsKeyDown(Key.Down))
-            {
-                eyePos -= 0.1f;
-            }
-
-            base.OnUpdateFrame(e);
-        }
+        
 
 
 
         private void SetMatrices()
         {
 
-            _view = glm.lookAt(new vec3((float)(4*_ring1Radius), eyePos, 0), new vec3(0, 0, 0), new vec3(0, 1, 0));
+            _view = glm.lookAt(new vec3(_xEyePos, _yEyePos, 0), new vec3(0, 0, 0), new vec3(0, 1, 0));
             //_model = new mat4(1.0f);
             _particleShader.Use();
             _particleShader.SetMatrix4("model", _model.ConvertToMatrix4());
@@ -303,6 +345,22 @@ namespace ComputeShaderTwoVortexRing
             _vortexShader.SetMatrix4("model", _model.ConvertToMatrix4());
             _vortexShader.SetMatrix4("projection", _projection.ConvertToMatrix4());
             _vortexShader.SetMatrix4("view", _view.ConvertToMatrix4());
+
+            float angle = 90;
+            
+            //var center = _ring1.GetCenter();
+            _yTranslate = _ring2.GetCenter();//(float)center.Y;
+            mat4 model = new mat4(1.0f);
+            model = glm.rotate(model, -glm.radians(angle), new vec3(1, 0, 0));
+            model = glm.translate(model, new vec3(0,0 , _yTranslate));
+            mat4 mv = _view * model;
+            mat3 norm = new mat3(new vec3(mv[0]), new vec3(mv[1]), new vec3(mv[2]));
+            _adsShader.Use();
+            _adsShader.SetMatrix3("NormalMatrix", norm.ConvertToMatrix3());
+
+            _adsShader.SetMatrix4("model", model.ConvertToMatrix4());
+            _adsShader.SetMatrix4("projection", _projection.ConvertToMatrix4());
+            _adsShader.SetMatrix4("view", _view.ConvertToMatrix4());
         }
 
 

@@ -26,8 +26,7 @@ void main()
   float dx = (CompWindow.z - CompWindow.x) / Width; 
   float dy = (CompWindow.w - CompWindow.y) / Height;
 
-  vec2 c = vec2(dx * gl_GlobalInvocationID.x + CompWindow.x,
-				dy * gl_GlobalInvocationID.y + CompWindow.y);
+  vec2 c = vec2(dx * gl_GlobalInvocationID.x + CompWindow.x, dy * gl_GlobalInvocationID.y + CompWindow.y);
 
   uint i = mandelbrot(c); 
   vec4 color = vec4(0.0,0.5,0.5,1);

@@ -1,5 +1,5 @@
 ﻿using System;
-using OpenTK;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace ComputeShaderTwoVortexRing
 {
@@ -44,7 +44,7 @@ namespace ComputeShaderTwoVortexRing
                 velocity += VortexSegment.Velocity(r, _points[i],
                                                        _points[i + 1] - _points[i], _gamma);
             }
-            
+
             return velocity;
         }
 
@@ -52,7 +52,7 @@ namespace ComputeShaderTwoVortexRing
         {
             for (int i = 0; i < _points.Length; i++)
             {
-                
+
                 _velocity[i] = new Vector3D(0);
                 _velocity[i] += Velocity(_points[i]);
 
@@ -63,12 +63,12 @@ namespace ComputeShaderTwoVortexRing
 
 
             }
-            
+
         }
 
         public void Move()
         {
-            for (int i = 0; i < _points.Length ; i++)
+            for (int i = 0; i < _points.Length; i++)
             {
                 _points[i] += _velocity[i] * _dt;
             }
@@ -81,11 +81,30 @@ namespace ComputeShaderTwoVortexRing
             for (int i = 0; i < _points.Length; i++)
             {
                 outArray[i] = new VortexPoint(_points[i], _gamma);
-                
+
             }
 
             return outArray;
 
+        }
+
+        public float GetCenter()
+        {
+            //var center = new Vector3D(0);
+            //int n = 0;
+            //for (var i = 0; i < _points.Length - 1; i++)
+            //{
+
+            //    center += _points[i];
+            //}
+
+            //return center / (_points.Length - 1);
+            return (float)_points[0].Y;
+        }
+
+        public float GetRadius()
+        {
+            return (float)Math.Sqrt(_points[0].X * _points[0].X + _points[0].Z * _points[0].Z);
         }
     }
 }

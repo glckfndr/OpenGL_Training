@@ -8,7 +8,7 @@ uniform int ringPointsNumber;
 //uniform float ring1Radius;
 //uniform float ring2Radius;
 
- struct VortexPoint
+struct VortexPoint
 {
         vec3 r;
         float gamma;
