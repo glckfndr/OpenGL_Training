@@ -53,9 +53,9 @@ namespace Texture_Parallax
             _angle = glm.radians(90.0f);
 
             // Load textures
-            var normalMap = new Texture("../../Textures/mybrick-normal.png", TextureWrapMode.ClampToBorder, TextureUnit.Texture1);
-            var heightMap = new Texture("../../Textures/mybrick-height.png", TextureWrapMode.ClampToBorder, TextureUnit.Texture2);
-            var colorMap = new Texture("../../Textures/mybrick-color.png");
+            var normalMap = new Texture2D("../../Textures/mybrick-normal.png", TextureWrapMode.ClampToBorder, TextureUnit.Texture1);
+            var heightMap = new Texture2D("../../Textures/mybrick-height.png", TextureWrapMode.ClampToBorder, TextureUnit.Texture2);
+            var colorMap = new Texture2D("../../Textures/mybrick-color.png");
             //normalMap = Texture.LoadTexture("../../Textures/mybrick-normal.png");
             //heightMap = Texture.LoadTexture("../../Textures/mybrick-height.png", TextureUnit.Texture1);
             //colorMap = Texture.LoadTexture("../../Textures/mybrick-color.png", TextureUnit.Texture0);

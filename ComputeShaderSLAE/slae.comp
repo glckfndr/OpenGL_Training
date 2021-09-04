@@ -1,52 +1,61 @@
 #version 430 
-layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
-
+layout (local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 uniform int RowLength;
+ 
 
-//layout (std140, binding = 0) uniform InputBufferA 
-//{
-//    float a[];
-//};
-//layout(std430, binding = 0) buffer InputBufferA{float a[];};
-//layout(std430, binding = 1) buffer InputBufferB{float b[];};
-//layout(std430, binding = 2) buffer OutputBuffer{float c[];};
-layout(std430, binding = 0) buffer InputBufferA{mat2 a[];};
-layout(std430, binding = 1) buffer InputBufferB{vec2 b[];};
-layout(std430, binding = 2) buffer OutputBuffer{vec2 c[];};
-//layout(std430, binding = 1) buffer OutputBuffer{vec2 velocity[];};
+layout(std430, binding = 0) readonly buffer InputBufferA{float a[];};
+//layout(std140, binding = 0) uniform InputBufferA{float a[];};
+layout(std430, binding = 1) readonly buffer InputBufferB{float b[];};
+layout(std430, binding = 2) writeonly buffer OutputBuffer{float c[];};
+
 //float A(uint i, uint j)
 //{
 //  return  a[i * RowLength + j]; 
 //}
 //
-mat2 AA(uint i, uint j)
-{
-  return  a[i * RowLength + j]; 
-}
+//uint i_j(uint i, uint j)
+//{
+//  return  i * RowLength + j; 
+//}
 
-uint i_j(uint i, uint j)
-{
-  return  i * RowLength + j; 
-}
+//uint k = gl_GlobalInvocationID.x * RowLength;
 
+shared float A[32][32];
 
 void main()
 {
+  
+	uint i = gl_GlobalInvocationID.x;
+	uint j = gl_GlobalInvocationID.y;
+	A[i][j] = a[i * RowLength + j];
+	//uint index = gl_GlobalInvocationID.x;
+	 
+	 //barrier();
+	 groupMemoryBarrier();
 	
-	uint index = gl_GlobalInvocationID.x;
-	if(index >= RowLength)
-	{
-		return;
-	}
-	//float sum = 0.0;
-	vec2 sum = vec2(0,0);
-	for(int j = 0; j < RowLength; j++)
+//	if(index >= RowLength)
+//	{
+//		return;
+//	}
+	
+	//uint k = index * RowLength;
+	
+	if(j > 0) return;
+	
+	float sum = 0.0;
+	//memoryBarrierShared();
+	
+	for(int k = 0; k < RowLength; k++)
 	{
 		//sum += A(index, j) * b[j];
-		sum += transpose(AA(index, j)) * b[j];
+		
+		//sum += a[k + j] * b[j];
+		//sum += a[k + j] * b[j]; //* b[j];
+		sum += A[i][k] * b[k];
 	}
-	//sum = vec2(a[index][1]);
-	//sum = transpose(a[0])*b[0];
-	c[index] = sum;
+	
+	//c[index] =  sum;
+	c[i] = sum;
+	
 }

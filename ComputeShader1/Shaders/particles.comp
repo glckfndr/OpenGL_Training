@@ -11,9 +11,9 @@ uniform vec3 BlackHolePos2 = vec3(-2,0,0);
 uniform float Gravity3 = 800.0;
 uniform vec3 BlackHolePos3 = vec3(3,0,0);
 
-uniform float ParticleMass = 0.1;
-uniform float ParticleInvMass = 1.0 / 0.1;
-uniform float DeltaT = 0.0005;
+uniform float ParticleMass = 10;
+float ParticleInvMass = 1.0 / ParticleMass;
+uniform float DeltaT = 0.00;
 uniform float MaxDist = 45.0;
 
 layout(std430, binding = 0) buffer Pos 
@@ -26,60 +26,64 @@ layout(std430, binding = 1) buffer Vel
   vec4 Velocity[];
 };
 
+vec3 GetForce(vec3 p0, vec3 bodyPos, float Gravity)
+{
+	vec3 d = p0 - bodyPos;
+	float dist = length(d);
+	return (Gravity / pow(dist, 2.1)) * normalize(d);
+}
+
 void main() 
 {
   uint idx = gl_GlobalInvocationID.x;
 
   vec3 p = Position[idx].xyz;
+  vec3 vel = Velocity[idx].xyz;
 
   // Force from black hole #1
-  vec3 d = BlackHolePos1 - p;
-  float dist1 = length(d);
-  vec3 force = (Gravity1 / dist1 / dist1) * normalize(d);
-
+  float dist1 = length(BlackHolePos1 - p);
+  vec3 force = GetForce(BlackHolePos1, p, Gravity1);
   // Force from black hole #2
-  d = BlackHolePos2 - p;
-  float dist2 = length(d);
-  force += (Gravity2 / dist2 / dist2) * normalize(d);
+  float dist2 = length(BlackHolePos2 - p);
+  force += GetForce(BlackHolePos2, p, Gravity2);//(Gravity2 / dist2 / dist2) * normalize(d);
+  	
+	vec3 p1 = p +  Velocity[idx].xyz * DeltaT * 0.5;
+	
+	vec3 a = force * ParticleInvMass;
+	vel += a * DeltaT * 0.5;
+	
+	force = GetForce(BlackHolePos1, p1, Gravity1);
+	force += GetForce(BlackHolePos2, p1, Gravity2);
+	a = force * ParticleInvMass;
 
-
-  //d = BlackHolePos3 - p;
-  //dist = length(d);
-  //force += (Gravity3 / dist/dist) * normalize(d);
+    Position[idx] = vec4(p + vel * DeltaT, 1.0);
+    Velocity[idx] = vec4(Velocity[idx].xyz + a * DeltaT, Velocity[idx].w);
 
   // Reset particles that get too far from the attractors
   const float div = 1.0;
   if( dist1 < 0.2 ) 
   {
-    //Position[idx].x = sin(dist1);
-	//Position[idx].y =  cos(dist1);
-	//Position[idx].z = 0.0;
-	Position[idx] = normalize(Position[idx]);
+  	Position[idx] = normalize(Position[idx]);
 	Velocity[idx] = vec4(0.0);
 	Velocity[idx].w = 0.5;
   } 
   else if( dist2 < 0.2 ) 
   {
-    //Position[idx].x = cos(dist2);
-	//Position[idx].y =  sin(dist2);
-	//Position[idx].z = 0.0;
-	Position[idx] = normalize(Position[idx]);
+  	Position[idx] = normalize(Position[idx]);
 	Velocity[idx] = vec4(0.0);
 	Velocity[idx].w = 1.0;
   }
   else if((dist1 + dist2)/2.0 > MaxDist)
   {
-    //Position[idx].x = sin(dist1);
-	//Position[idx].y =  cos(dist1);
-	//Position[idx].z = 0.0;
+  
 	Position[idx] = normalize(Position[idx]);
 	Velocity[idx] = vec4(0.0);
   }
   else 
   {
     // Apply simple Euler integrator
-    vec3 a = force * ParticleInvMass;
-    Position[idx] = vec4(p + Velocity[idx].xyz * DeltaT + 0.5 * a * DeltaT * DeltaT, 1.0);
-    Velocity[idx] = vec4(Velocity[idx].xyz + a * DeltaT, Velocity[idx].w);
+//    vec3 a = force * ParticleInvMass;
+//    Position[idx] = vec4(p + Velocity[idx].xyz * DeltaT + 0.5 * a * DeltaT * DeltaT, 1.0);
+//    Velocity[idx] = vec4(Velocity[idx].xyz + a * DeltaT, Velocity[idx].w);
   }
 }

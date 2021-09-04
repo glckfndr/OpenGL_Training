@@ -1,6 +1,7 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Runtime.InteropServices;
+using System.Windows;
 using OpenTK;
 using Buffer = System.Buffer;
 
@@ -11,6 +12,7 @@ namespace OpenGLHelper
         private int _id;
         private int _arraySize;
         private BufferUsageHint _usage;
+        private int _layoutShaderIndex;
 
         public StorageBuffer(BufferUsageHint usage)
         {
@@ -18,10 +20,9 @@ namespace OpenGLHelper
             _usage = usage;
         }
 
-        public void Bind(int index)
+        public void BindLayout(int layoutShaderIndex)
         {
-            GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, index, _id);
-
+            GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, layoutShaderIndex, _id);
         }
 
         public void Bind()
@@ -29,42 +30,53 @@ namespace OpenGLHelper
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, _id);
         }
         
-
-        public void SetAttribPointer(int index, int numberOfComponent, int stride = 0, int offset = 0, bool normalized = false, VertexAttribPointerType type = VertexAttribPointerType.Float)
+        public void SetAttribPointer(int layoutShaderIndex, int numberOfComponent, int stride = 0, 
+                                     int offset = 0, bool normalized = false, 
+                                     VertexAttribPointerType type = VertexAttribPointerType.Float)
         {
             GL.BindBuffer(BufferTarget.ArrayBuffer, _id);
-            GL.VertexAttribPointer(index, numberOfComponent, type, normalized, stride, offset);
-            GL.EnableVertexAttribArray(index);
+            GL.VertexAttribPointer(layoutShaderIndex, numberOfComponent, type, normalized, stride, offset);
+            GL.EnableVertexAttribArray(layoutShaderIndex);
         }
-
-
-        public void SetData<T>(T[] data, int index) where T : struct
+        
+        public void SetData<T>(T[] data, int layoutShaderIndex) where T : struct
         {
             _arraySize = data.Length;
-            Bind(index);
+            _layoutShaderIndex = layoutShaderIndex;
+            BindLayout(_layoutShaderIndex);
             //GL.BufferData(BufferTarget.ShaderStorageBuffer, Buffer.ByteLength(data), data, _usage);
             GL.BufferData(BufferTarget.ShaderStorageBuffer, _arraySize * Marshal.SizeOf(data[0]), data, _usage);
         }
-
-
-        public void SubData<T>(T[] data, int index) where T : struct
+        
+        public void SubData<T>(T[] data, int layoutShaderIndex) where T : struct
         {
             _arraySize = data.Length;
-            Bind(index);
+            BindLayout(layoutShaderIndex);
             //GL.BufferData(BufferTarget.ShaderStorageBuffer, Buffer.ByteLength(data), data, _usage);
             GL.BufferSubData(BufferTarget.ShaderStorageBuffer,IntPtr.Zero , _arraySize * Marshal.SizeOf(data[0]), data);
         }
 
-        public void Allocate<T>(T[] data, int index)
+        public void SubData<T>(T[] data) where T : struct
         {
             _arraySize = data.Length;
-            Bind(index);
-            GL.BufferData(BufferTarget.ShaderStorageBuffer, Buffer.ByteLength(data), IntPtr.Zero, _usage);
+            BindLayout(_layoutShaderIndex);
+            //GL.BufferData(BufferTarget.ShaderStorageBuffer, Buffer.ByteLength(data), data, _usage);
+            GL.BufferSubData(BufferTarget.ShaderStorageBuffer, IntPtr.Zero, _arraySize * Marshal.SizeOf(data[0]), data);
         }
 
-        public void Allocate(int sizeInByte, int index)
+        public void Allocate<T>(T[] data, int layoutShaderIndex)
         {
-            Bind(index);
+            _arraySize = data.Length;
+            _layoutShaderIndex = layoutShaderIndex;
+            BindLayout(_layoutShaderIndex);
+            //GL.BufferData(BufferTarget.ShaderStorageBuffer, Buffer.ByteLength(data), IntPtr.Zero, _usage);
+            var sizeOfElement = Marshal.SizeOf(data[0]);
+            GL.BufferData(BufferTarget.ShaderStorageBuffer, _arraySize * sizeOfElement, IntPtr.Zero, _usage);
+        }
+
+        public void Allocate(int sizeInByte, int layoutShaderIndex)
+        {
+            BindLayout(layoutShaderIndex);
             GL.BufferData(BufferTarget.ShaderStorageBuffer, sizeInByte, IntPtr.Zero, _usage);
         }
 
@@ -107,6 +119,8 @@ namespace OpenGLHelper
             unsafe
             {
                 var data = (float*)GL.MapBuffer(BufferTarget.ShaderStorageBuffer, BufferAccess.ReadOnly);
+                
+
                 fixed (float* pointer = array) // Obtain a pointer to the output buffer data
                 {
                     for (int i = 0; i < _arraySize; i++)
@@ -163,5 +177,47 @@ namespace OpenGLHelper
             }
             return array;
         }
+
+        public T[] GetData<T>() where T : unmanaged
+        {
+            Bind();
+            T[] array = new T[_arraySize];
+
+            unsafe
+            {
+                var data = (T*)GL.MapBuffer(BufferTarget.ShaderStorageBuffer, BufferAccess.ReadOnly);
+                fixed (T* pointer = array) // Obtain a pointer to the output buffer data
+                {
+                    for (int i = 0; i < _arraySize; i++)
+                    {
+                        pointer[i] = data[i];
+                    }
+                }
+                GL.UnmapBuffer(BufferTarget.ShaderStorageBuffer);
+            }
+            return array;
+        }
+
+
+        public Vector[] GetVectorData()
+        {
+            Bind();
+            Vector[] array = new Vector[_arraySize];
+
+            unsafe
+            {
+                var data = (Vector*)GL.MapBuffer(BufferTarget.ShaderStorageBuffer, BufferAccess.ReadOnly);
+                fixed (Vector* pointer = array) // Obtain a pointer to the output buffer data
+                {
+                    for (int i = 0; i < _arraySize; i++)
+                    {
+                        pointer[i] = data[i];
+                    }
+                }
+                GL.UnmapBuffer(BufferTarget.ShaderStorageBuffer);
+            }
+            return array;
+        }
+
     }
 }

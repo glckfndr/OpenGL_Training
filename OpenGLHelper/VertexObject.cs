@@ -12,7 +12,7 @@ namespace OpenGLHelper
         private readonly ArrayBuffer _vertexBufferObject;
         private readonly Shader _shader;
         private readonly (float[] vertices, uint[] indices) _shape;
-        private readonly Texture _texture;
+        private readonly Texture2D _texture;
         private readonly int _numberOfPoints;
 
         public VertexObject(Shader shader, (float[] vertices, uint[] indices) shape, float[] colorData)
@@ -35,7 +35,7 @@ namespace OpenGLHelper
         }
 
 
-        public VertexObject(Shader shader, Texture texture, string[] varName, int[] stride, int[] offset, params float[][] data)
+        public VertexObject(Shader shader, Texture2D texture, string[] varName, int[] stride, int[] offset, params float[][] data)
         {
             _shader = shader;
             _texture = texture;
@@ -55,7 +55,7 @@ namespace OpenGLHelper
         }
 
 
-        public VertexObject(Shader shader, (float[] vertices, uint[] indices) shape, Texture texture)
+        public VertexObject(Shader shader, (float[] vertices, uint[] indices) shape, Texture2D texture)
         {
             _texture = texture;
             _shape = shape;

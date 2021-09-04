@@ -1,6 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using System;
-using Buffer = System.Buffer;
+using System.Runtime.InteropServices;
 
 namespace OpenGLHelper
 {
@@ -67,7 +67,9 @@ namespace OpenGLHelper
         public void SetData<T>(T[] data) where T : struct
         {
             Bind();
-            GL.BufferData(_target, Buffer.ByteLength(data), data, _usage);
+            int arraySize = data.Length;
+            //GL.BufferData(_target, Buffer.ByteLength(data), data, _usage);
+            GL.BufferData(_target, arraySize * Marshal.SizeOf(data[0]), data, _usage);
         }
 
         public void SetSubData(IntPtr offs, int size, float[] data)

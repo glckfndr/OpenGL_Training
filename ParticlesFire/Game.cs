@@ -25,7 +25,7 @@ namespace ParticlesFire
         private float _time;
         private float _deltaT;
 
-        private Texture _texture;
+        private Texture2D _texture;
 
 
         private float t;
@@ -57,7 +57,7 @@ namespace ParticlesFire
             GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
             GL.Enable(EnableCap.ProgramPointSize);
-            GL.PointSize(100.0f);
+            GL.PointSize(40.0f);
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
@@ -72,7 +72,7 @@ namespace ParticlesFire
 
             const string texName = "../../Textures/fire.png";
             //const string texName = "../../Textures/water2.jpg";
-            _texture = new Texture(texName, TextureWrapMode.Repeat, TextureUnit.Texture0, TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+            _texture = new Texture2D(texName, TextureWrapMode.Repeat, TextureUnit.Texture0, TextureMinFilter.Nearest, TextureMagFilter.Nearest);
             GL.Enable(EnableCap.PointSprite);
             GL.PointParameter(PointParameterName.PointSpriteCoordOrigin, (int)PointSpriteCoordOriginParameter.LowerLeft);
             _texture.Use();
@@ -108,31 +108,36 @@ namespace ParticlesFire
             t += dt;
             _deltaT = t - _time;
             _time = t;
+
+            _angle = (float)((_angle + 0.01f) % (2 * Math.PI));
+            _view = glm.lookAt(new vec3(6.0f * glm.cos(_angle), 1.5f, 6.0f * glm.sin(_angle)),
+                            new vec3(0.0f, 1.5f, 0.0f),
+                                new vec3(0.0f, 1.0f, 0.0f));
             //_angle = (float)((_angle + 0.01f) % (2 * Math.PI));
 
             // Update pass
-            GL.UniformSubroutines(ShaderType.VertexShader, 1, ref _updateSub);
+            // GL.UniformSubroutines(ShaderType.VertexShader, 1, ref _updateSub);
+            _shader.SetSubroutineIndex(_updateSub, 1);
             _shader.SetFloat("Time", _time);
             _shader.SetFloat("H", _deltaT);
 
             GL.Enable(EnableCap.RasterizerDiscard);
 
-            _feedback[_drawBuf].Bind();
             _feedback[_drawBuf].Begin();
-            _particleVertexArray[1 - _drawBuf].Draw(PrimitiveType.Points, 0, _nParticles);
+                _particleVertexArray[1 - _drawBuf].Draw(PrimitiveType.Points, 0, _nParticles);
             _feedback[_drawBuf].End();
-            GL.Disable(EnableCap.RasterizerDiscard);
 
+            GL.Disable(EnableCap.RasterizerDiscard);
             // Render pass
-            GL.UniformSubroutines(ShaderType.VertexShader, 1, ref _renderSub);
+            //GL.UniformSubroutines(ShaderType.VertexShader, 1, ref _renderSub);
+            _shader.SetSubroutineIndex(_renderSub, 1);
             GL.Clear(ClearBufferMask.ColorBufferBit);
-            _view = glm.lookAt(new vec3(3.0f * glm.cos(_angle), 1.5f, 3.0f * glm.sin(_angle)),
-                            new vec3(0.0f, 1.5f, 0.0f),
-                        new vec3(0.0f, 1.0f, 0.0f));
             SetMatrices(_shader);
 
-            _particleVertexArray[_drawBuf].Bind();
-            _feedback[_drawBuf].Draw();
+            //_particleVertexArray[_drawBuf].Bind();
+            //_feedback[_drawBuf].Draw();
+             //GL.DrawArraysInstanced(PrimitiveType.Triangles, 0, 6, _nParticles);
+            _particleVertexArray[_drawBuf].Draw(PrimitiveType.Points, 0, _nParticles);
 
             // Swap _buffers
             _drawBuf = 1 - _drawBuf;

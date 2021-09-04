@@ -53,7 +53,6 @@
   <ItemGroup>
     <Compile Include="Game.cs" />
     <Compile Include="Grid.cs" />
-    <Compile Include="ParticleUtils.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -65,6 +64,8 @@
     <None Include="Shaders\flat.vert" />
     <None Include="Shaders\particles.frag" />
     <None Include="Shaders\particles.vert" />
+    <None Include="Shaders\triangle.frag" />
+    <None Include="Shaders\triangle.vert" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
@@ -75,6 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Textures\bluewater.png" />
+    <Content Include="Textures\bubble.png" />
     <Content Include="Textures\water2.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

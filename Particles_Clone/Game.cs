@@ -15,13 +15,13 @@ namespace Particles_Clone
         private ArrayBuffer _initialVelocityBuffer;
         private ArrayBuffer _startTimeBuffer;
         private VertexArray _particleVertexArray;
-        
+
         private int _nParticles = 5000;
         private float _angle;
         private float _time;
         private float _deltaT;
 
-        private Texture _texture;
+        private Texture2D _texture;
         private float particleLifetime = 6;
 
         private float t;
@@ -40,17 +40,49 @@ namespace Particles_Clone
         protected override void OnLoad(EventArgs e)
         {
             _torus = new Torus(0.5f * 0.1f, 0.2f * 0.1f, 20, 20);
-            _shader = new Shader("../../Shaders/particleinstanced.vert", "../../Shaders/particleinstanced.frag");
 
-            GL.ClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-            GL.Enable(EnableCap.DepthTest);
-            _angle = (float)(Math.PI / 2);
-            InitBuffers();
+            _shader = new Shader("../../Shaders/particleinstanced.vert",
+                                "../../Shaders/particleinstanced.frag");
             _shader.SetVector3("Light.Intensity", new Vector3(1.0f, 1.0f, 1.0f));
             _shader.SetFloat("ParticleLifetime", 3.5f);
             _shader.SetVector3("Gravity", new Vector3(0.0f, -0.2f, 0.0f));
 
+            GL.ClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+            GL.Enable(EnableCap.DepthTest);
+
+            _angle = (float)(Math.PI / 2);
+            InitBuffers();
+            
             base.OnLoad(e);
+        }
+
+        protected override void OnRenderFrame(FrameEventArgs e)
+        {
+            t += dt;
+            _deltaT = t - _time;
+            _time = t;
+            _angle = (float)((_angle + 0.01f) % (2 * Math.PI));
+            _view = glm.lookAt(new vec3(3.0f * glm.cos(_angle), 1.5f, 3.0f * glm.sin(_angle)),
+                new vec3(0.0f, 1.5f, 0.0f),
+                new vec3(0.0f, 1.0f, 0.0f));
+
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            _shader.SetFloat("Time", _time);
+            _shader.SetVector4("Light.Position", new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
+            _shader.SetVector3("Material.Kd", new Vector3(0.9f, 0.5f, 0.2f));
+            _shader.SetVector3("Material.Ks", new Vector3(0.95f, 0.95f, 0.95f));
+            _shader.SetVector3("Material.Ka", new Vector3(0.1f, 0.1f, 0.1f));
+            _shader.SetFloat("Material.Shininess", 100.0f);
+            _model = new mat4(1.0f);
+            SetMatrices(_shader);
+
+            //GL.BindVertexArray(_torus.GetVao());
+            _particleVertexArray.Bind();
+            GL.DrawElementsInstanced(PrimitiveType.Triangles, 6 * 20 * 20,
+                DrawElementsType.UnsignedInt, IntPtr.Zero, _nParticles);
+
+            Context.SwapBuffers();
         }
 
 
@@ -67,79 +99,22 @@ namespace Particles_Clone
             base.OnUpdateFrame(e);
         }
 
-        protected override void OnRenderFrame(FrameEventArgs e)
-        {
-            t += dt;
-            _deltaT = t - _time;
-            _time = t;
-            _angle = (float)((_angle + 0.01f) % (2 * Math.PI));
 
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-            _shader.SetFloat("Time", _time);
-
-            _view = glm.lookAt(new vec3(3.0f * glm.cos(_angle), 1.5f, 3.0f * glm.sin(_angle)),
-                            new vec3(0.0f, 1.5f, 0.0f),
-                                new vec3(0.0f, 1.0f, 0.0f));
-
-            _shader.SetVector4("Light.Position", new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
-            _shader.SetVector3("Material.Kd", new Vector3(0.9f, 0.5f, 0.2f));
-            _shader.SetVector3("Material.Ks", new Vector3(0.95f, 0.95f, 0.95f));
-            _shader.SetVector3("Material.Ka", new Vector3(0.1f, 0.1f, 0.1f));
-            _shader.SetFloat("Material.Shininess", 100.0f);
-            _model = new mat4(1.0f);
-            SetMatrices(_shader);
-
-            //GL.BindVertexArray(_torus.GetVao());
-            _particleVertexArray.Bind();
-            GL.DrawElementsInstanced(PrimitiveType.Triangles, 6 * 20 * 20,
-                                        DrawElementsType.UnsignedInt, IntPtr.Zero, _nParticles);
-
-            Context.SwapBuffers();
-        }
 
         private void InitBuffers()
         {
-            
-
             // Fill the first velocity buffer with random velocities
             vec3 v = new vec3(0.0f);
-            float velocity, theta, phi;
-            float[] data = new float[_nParticles * 3];
-            Random rnd = new Random();
-            for (int i = 0; i < _nParticles; i++)
-            {
-
-                theta = Mix(0.0f, Math.PI / 6.0f, rnd.NextDouble());
-                phi = Mix(0.0f, 2 * Math.PI, rnd.NextDouble());
-
-                v.x = glm.sin(theta) * glm.cos(phi);
-                v.y = glm.cos(theta);
-                v.z = glm.sin(theta) * glm.sin(phi);
-
-                velocity = Mix(1.25f, 1.5f, rnd.NextDouble());
-                v = glm.normalize(v) * velocity;
-
-                data[3 * i] = v.x;
-                data[3 * i + 1] = v.y;
-                data[3 * i + 2] = v.z;
-            }
+            
+            var velocityData = GetVelocityData();
 
             // Allocate space for all _buffers
             int size = _nParticles * 3 * sizeof(float);
             _initialVelocityBuffer = new ArrayBuffer(BufferUsageHint.StaticDraw);
             _initialVelocityBuffer.Allocate(size);
-            _initialVelocityBuffer.SetData(data);
+            _initialVelocityBuffer.SetData(velocityData);
 
-            var tempData = new float[_nParticles];
-            _time = 0.0f;
-            float rate = 0.01f;
-            for (int i = 0; i < _nParticles; i++)
-            {
-                tempData[i] = _time;
-                _time += rate;
-
-            }
+            var tempData = GetTimeData();
             _startTimeBuffer = new ArrayBuffer(BufferUsageHint.StaticDraw);
             _startTimeBuffer.Allocate(size / 3);
             _startTimeBuffer.SetData(tempData);
@@ -156,6 +131,46 @@ namespace Particles_Clone
 
             //GL.BindVertexArray(0);
             _particleVertexArray.Unbind();
+        }
+
+        private float[] GetTimeData()
+        {
+            var tempData = new float[_nParticles];
+            _time = 0.0f;
+            float rate = 0.01f;
+            for (int i = 0; i < _nParticles; i++)
+            {
+                tempData[i] = _time;
+                _time += rate;
+            }
+
+            return tempData;
+        }
+
+        private float[] GetVelocityData()
+        {
+            float velocity, theta, phi;
+            vec3 v;
+            float[] data = new float[_nParticles * 3];
+            Random rnd = new Random();
+            for (int i = 0; i < _nParticles; i++)
+            {
+                theta = Mix(0.0f, Math.PI / 6.0f, rnd.NextDouble());
+                phi = Mix(0.0f, 2 * Math.PI, rnd.NextDouble());
+
+                v.x = glm.sin(theta) * glm.cos(phi);
+                v.y = glm.cos(theta);
+                v.z = glm.sin(theta) * glm.sin(phi);
+
+                velocity = Mix(1.25f, 1.5f, rnd.NextDouble());
+                v = glm.normalize(v) * velocity;
+
+                data[3 * i] = v.x;
+                data[3 * i + 1] = v.y;
+                data[3 * i + 2] = v.z;
+            }
+
+            return data;
         }
 
         protected override void OnResize(EventArgs e)

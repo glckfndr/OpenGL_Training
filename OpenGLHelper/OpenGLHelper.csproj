@@ -23,6 +23,7 @@
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -32,6 +33,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="GlmNet, Version=0.7.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -65,6 +67,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CheckErrors.cs" />
@@ -84,13 +87,16 @@
     <Compile Include="StorageBuffer.cs" />
     <Compile Include="TeaPot.cs" />
     <Compile Include="TeapotData.cs" />
+    <Compile Include="Texture1D32.cs" />
+    <Compile Include="Texture2D32.cs" />
+    <Compile Include="Texture3D32.cs" />
     <Compile Include="Torus.cs" />
     <Compile Include="TransformFeedback.cs" />
     <Compile Include="TriangleMesh.cs" />
     <Compile Include="UniformBuffer.cs" />
     <Compile Include="VertexArray.cs" />
     <Compile Include="VertexObject.cs" />
-    <Compile Include="Texture.cs" />
+    <Compile Include="Texture2D.cs" />
     <Compile Include="ArrayBuffer.cs" />
   </ItemGroup>
   <ItemGroup>

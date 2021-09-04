@@ -1,0 +1,24 @@
+﻿<Window x:Name="FMMDemoWindow"
+        x:Class="DemoFMM.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DemoFMM"
+        mc:Ignorable="d"
+        Title="MainWindow"
+        Width="1024" 
+        Height="800">
+    <StackPanel>
+        
+        <Button x:Name="CreateTreeButton" 
+                Content="Create FMM Tree"
+                Click="Click_CreateTreeButton"></Button>
+        <Button x:Name="CalcTreeButton"
+                Content="Calculate Velocity On FMM Tree"
+                Click="Click_CalcTreeButton"></Button>
+        <Canvas x:Name="FMMCanvas"
+                Width="1024"
+                Height="768"></Canvas>
+    </StackPanel>
+</Window>

@@ -28,8 +28,8 @@ namespace ComputeShaderFindEdge
         private Torus _torus;
         private TeaPot _teapot;
         private Sphere _sphere;
-        Texture _renderTexture;
-        Texture _edgeTexture;
+        Texture2D _renderTexture;
+        Texture2D _edgeTexture;
         RenderBuffer _depthBuffer;
         private float _tPrev;
         private float _rotSpeed = ((float)Math.PI / 4.0f);
@@ -62,8 +62,8 @@ namespace ComputeShaderFindEdge
             _projection = new mat4(1.0f);
             _angle = (float)Math.PI / 2;
             // Create the texture object
-            _edgeTexture = new Texture(Width, Height, TextureWrapMode.ClampToBorder, 1);
-            _renderTexture = new Texture(Width, Height, TextureWrapMode.ClampToBorder, 0, TextureUnit.Texture1);
+            _edgeTexture = new Texture2D(Width, Height, 1);
+            _renderTexture = new Texture2D(Width, Height,  0, TextureUnit.Texture1);
             // Create the depth buffer
             _depthBuffer = new RenderBuffer(Width, Height);
             _fbo = CreateFBO();
@@ -140,7 +140,8 @@ namespace ComputeShaderFindEdge
                     _shader.Use();
                     _fbo.Bind();
                     Pass1();
-                    _computeShader.Compute(MemoryBarrierFlags.ShaderImageAccessBarrierBit, Width / 25, Height / 25, 1);
+                    _computeShader.Compute( Width / 25, Height / 25, 1, 
+                        MemoryBarrierFlags.ShaderImageAccessBarrierBit);
                     _shader.Use();
                     _fbo.UnBind();
                     Pass2();

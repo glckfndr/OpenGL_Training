@@ -80,8 +80,8 @@ namespace ComputeShaderTestUniform
             var bufferC = new StorageBuffer(BufferUsageHint.DynamicDraw);
             bufferC.SetData(C, 1);
 
-            shader.Compute(MemoryBarrierFlags.ShaderStorageBarrierBit,
-                particleNumber / 32, 1, 1);
+            shader.Compute(particleNumber / 32, 1, 1, 
+                MemoryBarrierFlags.ShaderStorageBarrierBit);
             var arrayFromShader = bufferC.GetVector2Data();
             stp.Stop();
             Console.WriteLine("Compute Time GPU and Get Data(ms): " + stp.ElapsedMilliseconds);

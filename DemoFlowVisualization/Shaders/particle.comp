@@ -1,0 +1,94 @@
+﻿#version 430
+layout(local_size_x = 128) in;
+layout(std430, binding = 0) buffer ParticlesPosition
+{
+  vec4 particlePosition[];
+};
+
+struct Vortex
+{
+        vec2 r;
+        float gamma;
+		float rankinRadius;
+};
+
+layout(std430, binding = 1) buffer VortexData 
+{
+  Vortex vortex[];
+};
+
+layout(std430, binding = 2) buffer ParticleVelocity
+{
+  vec4 pVelocity[];
+};
+
+layout(std430, binding = 3) buffer StartPos
+{
+  vec4 start[];
+};
+
+layout(std430, binding = 4) buffer LifeTime
+{
+  vec2 lifeTime[];
+};
+
+uniform int vortexNumber;
+uniform float deltaTime;
+uniform vec4 flowVelocity;
+
+
+#define PI 3.1415926535
+highp const float koef = 1.0/2.0/PI;
+
+vec2 Velocity2D(vec2 r, Vortex vortex)
+{
+	highp vec2 dr = r - vortex.r;
+	highp float dist = length(dr);
+	highp float self = step(dist, vortex.rankinRadius);
+	
+	float selector = step(vortex.rankinRadius, dist);
+	dist = selector * dist + (1 - selector)*vortex.rankinRadius;
+	float vx = - koef * vortex.gamma * dr.y / (dist * dist);
+	float vy =  koef * vortex.gamma * dr.x / (dist * dist);
+	return vec2(  vx ,  vy );
+
+}
+
+void main() 
+{
+  uint index = gl_GlobalInvocationID.x;
+  vec2 p = particlePosition[index].xy;
+  
+  vec2 velocity = flowVelocity.xy;
+  for(int i = 0; i < vortexNumber; i++)
+  {
+	velocity += Velocity2D(p, vortex[i]);
+  }
+
+  vec2 pos = p + velocity * deltaTime * 0.5;
+
+  velocity = flowVelocity.xy;;
+  for(int i = 0; i < vortexNumber; i++)
+  {
+	velocity += Velocity2D(pos, vortex[i]);
+  }
+  
+  pos = p + velocity * deltaTime;
+  lifeTime[index].x += deltaTime;
+  
+  if(lifeTime[index].x > lifeTime[index].y)
+  {
+	particlePosition[index].xy = start[index].xy;
+	lifeTime[index].x = 0.0;
+	pVelocity[index].xy = vec2(start[index].y + 1.5,0)/2;//vec2(0,0);
+  }
+  else
+  {
+		//pVelocity[index].xy = velocity;
+		//pVelocity[index].xy = vec2(pos.y,0); 
+		particlePosition[index].xy = pos;
+  }
+	
+	pVelocity[index].z = lifeTime[index].x/lifeTime[index].y;
+
+}

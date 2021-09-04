@@ -13,7 +13,7 @@ namespace ComputeShaderTwoVortexRing
                 //You can leave that out and it'll just update as fast as the hardware will allow it.
                 //game.ClientSize = new Size(512,512);
                 game.Location = new Point(10, 10);
-                game.Run(30.0);
+                game.Run(60.0);
             }
 
         }

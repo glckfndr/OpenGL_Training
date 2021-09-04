@@ -21,29 +21,72 @@ layout(std430, binding = 1) buffer VortexVelocity
 	vec2 vortexVelocity[];
 };
 
-
-#define PI 3.148
-const float koef = 1.0/2.0/PI;
+#define PI 3.1415926535
+highp const float twoPi = 2.0 * PI;
+highp const float koef = 1.0/twoPi;
 
 vec2 Velocity2D(vec2 r, Vortex vortex)
 {
-	vec2 dr = r - vortex.r;
-	float dist = length(dr);
+
+	highp vec2 dr = r - vortex.r;
+	highp float dist = length(dr);
+	highp float self = step(dist, vortex.rankinRadius);
+	
 	float selector = step(vortex.rankinRadius, dist);
 	dist = selector * dist + (1 - selector)*vortex.rankinRadius;
-	return koef*vortex.gamma * vec2( -dr.y, dr.x)/(dist*dist);
+	float vx = - koef * vortex.gamma * dr.y / (dist * dist);
+	float vy =  koef * vortex.gamma * dr.x / (dist * dist);
+	return vec2(  vx ,  vy );
 
 }
+
+	highp const float a =  2.0;
+	highp const float two_Pi_a = twoPi / a;
+	highp const float two_a = 2 * a;
+	highp const float coef = two_a * two_Pi_a * two_Pi_a * 0.5;
+
+vec2 Velocity2DChain(vec2 r, Vortex vortex)
+{
+	highp vec2 dr = r - vortex.r;
+	highp float two_Pi_a_y = two_Pi_a * dr.y;
+	
+	highp float gt = step(a - vortex.rankinRadius, dr.x);
+	highp float lt = step(dr.x, - a + vortex.rankinRadius);
+	dr.x = dr.x - gt * a + lt * a;
+//	if(dr.x > a - vortex.rankinRadius )
+//	{
+//		dr.x = dr.x - a; 
+//	}
+//	else if(dr.x < - a + vortex.rankinRadius )
+//	{
+//		dr.x = dr.x + a; 
+//	}
+	
+	highp float		self = step(length(dr), vortex.rankinRadius);
+	float			two_Pi_a_x = two_Pi_a * dr.x;
+	highp float		denom =  two_a * (cosh(two_Pi_a_y) - cos(two_Pi_a_x));
+	
+	highp float		k_gamma = vortex.gamma/((1.0 - self) * denom + self * coef * vortex.rankinRadius * vortex.rankinRadius);
+
+	highp  float	u = - sinh(two_Pi_a_y) * k_gamma;
+    highp float		v =  sin(two_Pi_a_x) * k_gamma;
+
+	return vec2(  u ,  v );
+
+}
+
+
 
 void main() 
 {
   uint idx = gl_GlobalInvocationID.x;
 
   vec2 p = vortex[idx].r;
-  vec2 velocity = vec2(0.0, 0.0);
+  highp vec2 velocity = vec2(0.0, 0.0);
   for(int i = 0; i < vortexNumber; i++)
   {
 	velocity += Velocity2D(p, vortex[i]);
+	//velocity += Velocity2DChain(p, vortex[i]);
   }
 	vortexVelocity[idx] = velocity;
 }

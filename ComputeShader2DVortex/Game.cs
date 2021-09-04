@@ -10,45 +10,54 @@ using System.Collections.Generic;
 
 namespace ComputeShader2DVortex
 {
-    
+
 
     public class Game : GameWindow
     {
 
-        //  private Shader _particleShader;
+        //  shaders for rendering
         private Shader _vortexShader;
-        //  private Shader _adsShader;
-        private Shader _computeShaderVelocity;
-        private Shader _computeShaderPosition;
-        private vec3 nParticles = new vec3(16, 16, 16);
-        private int _totalParticles;
-        private int vortexNumber;
-        private float eyePos = 3.0f;
+        private Shader _renderShader;
+
+        //  shaders for computing;
+        private Shader _velocityComputeShader;
+        private Shader _positionComputeShader;
+        private Shader _clearTextureComputeShader;
+
+        private readonly vec3 _nParticles = new vec3(128, 32, 1);
+        //private int _totalParticles;
+        private float _totalVorticity = 60.0f;
+        private int _vortexNumber;
+        private float _eyePos = 2.0f;
 
         private StorageBuffer _vortexBuffer;
         private StorageBuffer _velocityBuffer;
 
-        private float _gamma = 0.1f;
+        // private float _gamma = 0.1f;
 
-        private float _time;
-        private float _deltaT;
+        private float _time = 0;
+        private float _deltaTime = 0.00005f;
         private float _speed = 35.0f;
         private float _angle;
 
         //  private VertexArray _particleVAO;
         private VertexArray _vortexVAO;
 
-        private float t;
+
         private float dt;
         private mat4 _projection;
         private mat4 _view;
         private mat4 _model;
-        private Sphere _sphere1;
-        private Sphere _sphere2;
-        private double outDeltaR = 0.15f;
-        private double innerDeltaR = 0.15f;
 
-        private double _ringRadius = 1.0;
+        private Texture2D _texture;
+        private int _height = 1024;
+        private int _width = 1024;
+        private Plane _plane;
+        private StorageBuffer _vortexBuffer05;
+        private Shader _positionComputeShader05;
+        private bool _is3D = true;
+        private bool _isPause = false;
+
 
         public Game(int width, int height, string title) : base(width, height, GraphicsMode.Default, title)
         {
@@ -57,12 +66,33 @@ namespace ComputeShader2DVortex
 
         protected override void OnLoad(EventArgs e)
         {
-
-
-            _totalParticles = (int)(nParticles.x * nParticles.y * nParticles.z);
-            vortexNumber = _totalParticles;
+            _vortexNumber = (int)(_nParticles.x * _nParticles.y * _nParticles.z);
+            
             CreateShaders();
-            InitializeBuffers();
+
+            _texture = new Texture2D(_width, _height, 0);
+            _plane = new Plane(3.0f, 3.0f, 2, 2);
+            _angle = 90.0f;
+
+            // List<Vortex> vortexes = VortexInitializer.GetVortexesInCircle(nParticles);
+            //List<Vortex> vortexes = VortexInitializer.GetVortexesInLayer(nParticles);
+            List<Vortex> vortexes = VortexInitializer.GetVortexesInLayerOrdered(_nParticles, _totalVorticity / _vortexNumber);
+            _vortexBuffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
+            _vortexBuffer.SetData(vortexes.ToArray(), 0);
+
+            _vortexBuffer05 = new StorageBuffer(BufferUsageHint.DynamicDraw);
+            _vortexBuffer05.SetData(vortexes.ToArray(), 2);
+
+            var initialVelocity = VortexInitializer.GetVelocity(_nParticles);
+            _velocityBuffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
+            _velocityBuffer.SetData(initialVelocity.ToArray(), 1);
+
+            // Set up a buffer and a VAO for drawing the vortexes
+            _vortexVAO = new VertexArray(); ;
+            _vortexBuffer.SetAttribPointer(0, 4);
+            _velocityBuffer.SetAttribPointer(1, 2);
+            _vortexVAO.Unbind();
+
             SetOpenGlParameters();
             SetInitialMatrix();
             base.OnLoad(e);
@@ -70,39 +100,85 @@ namespace ComputeShader2DVortex
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            _time += _deltaT;
-            // Execute the compute shader
-            _computeShaderVelocity.Use();
-            _computeShaderVelocity.SetInt("vortexNumber", vortexNumber);
-            _vortexBuffer.Bind(0);
-            _velocityBuffer.Bind(1);
-            _computeShaderVelocity.Compute(MemoryBarrierFlags.ShaderStorageBarrierBit,
-                    _totalParticles / 128, 1, 1);
+            if (!_isPause)
+            {
+                _time += _deltaTime;
+                if (_time % 0.1 <= _deltaTime)
+                {
+                    Console.WriteLine("Vortex Number: " + _vortexNumber);
+                    Console.WriteLine("Time: " + _time);
+                }
+                    
 
-            _computeShaderPosition.Use();
-            _vortexBuffer.Bind(0);
-            _velocityBuffer.Bind(1);
-            _computeShaderPosition.Compute(MemoryBarrierFlags.ShaderStorageBarrierBit,
-                _totalParticles / 128, 1, 1);
+                _clearTextureComputeShader.Compute( _width / 16, _height / 16, 1, MemoryBarrierFlags.ShaderImageAccessBarrierBit);
 
+                //_velocityComputeShader.Use();
+                _velocityComputeShader.SetInt("vortexNumber", _vortexNumber);
+                
+                // Bind buffers to compute shader
+                //_vortexBuffer.Bind(0);
+                _vortexBuffer.BindLayout(0);
+                _velocityBuffer.BindLayout(1);
+                // start compute shader
+                _velocityComputeShader.Compute(_vortexNumber / 128, 1, 1, MemoryBarrierFlags.ShaderStorageBarrierBit);
+
+                // Bind buffers to compute shader
+                _vortexBuffer05.BindLayout(2);
+                _positionComputeShader05.SetFloat("deltaTime", _deltaTime / 2);
+                // start compute shader
+                _positionComputeShader05.Compute(_vortexNumber / 128, 1, 1, MemoryBarrierFlags.ShaderStorageBarrierBit);
+
+                // Bind buffers to compute shader
+                _vortexBuffer05.BindLayout(0);
+                // start compute shader
+                _velocityComputeShader.Compute(_vortexNumber / 128, 1, 1, MemoryBarrierFlags.ShaderStorageBarrierBit);
+
+                _vortexBuffer.BindLayout(0);
+                _positionComputeShader.SetFloat("deltaTime", _deltaTime);
+                _positionComputeShader.Compute(_vortexNumber / 128, 1, 1, 
+                    MemoryBarrierFlags.ShaderStorageBarrierBit | MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+            }
             // Draw the scene
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            SetShaderMatrices();
-            
-            _vortexShader.Use();
-            _vortexShader.SetVector4("Color", new Vector4(0.7f, 0.9f, 0.3f, 0.8f));
-            //_velocityBuffer.SetAttribPointer(2, _totalParticles);
-            _vortexVAO.Draw(PrimitiveType.Points, 0, _totalParticles);
 
+            if (_is3D)
+            {
+                SetShaderMatrices();
+
+                _vortexShader.Use();
+                _vortexShader.SetVector4("Color", new Vector4(0.7f, 0.9f, 0.3f, 0.8f));
+                _velocityBuffer.SetAttribPointer(2, _vortexNumber);
+                _vortexVAO.Draw(PrimitiveType.Points, 0, _vortexNumber);
+            }
+            else
+            {
+                _renderShader.Use();
+
+                // mat4 view = glm.lookAt(new vec3(0, _eyePos, 2), new vec3(0, 0, 0), new vec3(0, 1, 0));
+                // mat4 model = glm.rotate(new mat4(1.0f), glm.radians(_angle), new vec3(1, 0.0f, 0.0f));
+                mat4 view = glm.lookAt(new vec3(0, _eyePos, 0), new vec3(0, 0, 0), new vec3(0, 0, -1));
+                var model = new mat4(1.0f);
+                mat4 mv = view * model;
+                mat3 norm = new mat3(new vec3(mv[0]), new vec3(mv[1]), new vec3(mv[2]));
+                mat4 proj = glm.perspective(glm.radians(60.0f), (float)Width / Height, 0.1f, 100.0f);
+
+                _renderShader.SetMatrix4("model", model.ConvertToMatrix4());
+                _renderShader.SetMatrix4("view", view.ConvertToMatrix4());
+                _renderShader.SetMatrix4("projection", proj.ConvertToMatrix4());
+                _renderShader.SetMatrix3("NormalMatrix", norm.ConvertToMatrix3());
+
+                _plane.Render();
+            }
 
             Context.SwapBuffers();
+            //Thread.Sleep(500);
             base.OnRenderFrame(e);
         }
 
         private void SetInitialMatrix()
         {
             _model = new mat4(1.0f);
-            _projection = glm.perspective(glm.radians(50.0f), (float)Width / Height, 0.1f, 100.0f);
+            _projection = glm.perspective(glm.radians(60.0f), (float)Width / Height, 0.1f, 100.0f);
         }
 
         private void SetOpenGlParameters()
@@ -118,92 +194,24 @@ namespace ComputeShader2DVortex
         {
             //_particleShader = new Shader("../../Shaders/particles.vert", "../../Shaders/particles.frag");
             _vortexShader = new Shader("../../Shaders/vortex.vert", "../../Shaders/vortex.frag");
-
-            _computeShaderVelocity = new Shader("../../Shaders/vortexVelocity2D.comp");
-            _computeShaderVelocity.SetInt("vortexNumber", vortexNumber);
-
-            _computeShaderPosition = new Shader("../../Shaders/vortexPosition2D.comp");
-            //_computeShaderPosition.SetInt("vortexNumber", vortexNumber);
-        }
-
-
-
-        private void InitializeBuffers()
-        {
-            // Initial positions of the particles
-
-            // We need _buffers for position , and velocity.
-            //int bufSize = _totalParticles * 4 * sizeof(float);
-
-            // The _buffers for positions
-            List<Vortex> vortexes = GetVortexes();
-
-            _vortexBuffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
-            _vortexBuffer.SetData(vortexes.ToArray(), 0);
-
-            var vel = GetVelocity();
-            _velocityBuffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
-            _velocityBuffer.SetData(vel.ToArray(), 1);
-
-            // Set up the VAO
-            // Set up a buffer and a VAO for drawing the vortexes
-            _vortexVAO = new VertexArray(); ;
-            _vortexBuffer.SetAttribPointer(0, 4);
-            _velocityBuffer.SetAttribPointer(1, 2);
-            _vortexVAO.Unbind();
-        }
+            _renderShader = new Shader("../../Shaders/ads.vert", "../../Shaders/ads.frag");
+            _renderShader.Use();
+            _renderShader.SetVector4("LightPosition", new Vector4(2.0f, 2.0f, 2.0f, 1.0f));
+            _renderShader.SetVector3("LightIntensity", new Vector3(1.0f));
+            _renderShader.SetVector3("Kd", new Vector3(0.8f));
+            _renderShader.SetVector3("Ka", new Vector3(0.2f));
+            _renderShader.SetVector3("Ks", new Vector3(0.2f));
+            _renderShader.SetFloat("Shininess", 180.0f);
 
 
+            _velocityComputeShader = new Shader("../../Shaders/vortexVelocity2D.comp");
+            _velocityComputeShader.SetInt("vortexNumber", _vortexNumber);
+            _positionComputeShader = new Shader("../../Shaders/vortexPosition2D.comp");
+            _positionComputeShader05 = new Shader("../../Shaders/vortexPosition2D05.comp");
+            //_positionComputeShader.SetInt("_vortexNumber", _vortexNumber);
 
-        private List<Vortex> GetVortexes()
-        {
-            List<Vortex> list = new List<Vortex>();
-            var rnd = new Random();
-            //var deltaR = outRadius - innerRadius; 
-            float R = 1.0f;
-            for (int i = 0; i < nParticles.x; i++)
-            {
-                for (int j = 0; j < nParticles.y; j++)
-                {
-                    for (int k = 0; k < nParticles.z; k++)
-                    {
-                        var phi = rnd.NextDouble() * 2.0 * Math.PI;
+            _clearTextureComputeShader = new Shader("../../Shaders/clearTexture.comp");
 
-                        var r = R * rnd.NextDouble();
-                        var x = (float)(r * Math.Cos(phi));
-                        var y = (float)(r * Math.Sin(phi));
-                        var gamma = (float)(-0.1 + 0.2 * rnd.NextDouble());
-                        var rankine = 0.01f;
-                        var vr = new Vortex(new vec2(x, y), gamma, rankine);
-                        list.Add(vr);
-                    }
-                }
-            }
-
-            return list;
-        }
-
-        private List<vec2> GetVelocity()
-        {
-            List<vec2> list = new List<vec2>();
-            var rnd = new Random();
-            //var deltaR = outRadius - innerRadius; 
-            float R = 1.0f;
-            for (int i = 0; i < nParticles.x; i++)
-            {
-                for (int j = 0; j < nParticles.y; j++)
-                {
-                    for (int k = 0; k < nParticles.z; k++)
-                    {
-
-                        var vel = new vec2(0);
-                        list.Add(vel);
-
-                    }
-                }
-            }
-
-            return list;
         }
 
 
@@ -218,12 +226,37 @@ namespace ComputeShader2DVortex
 
             if (input.IsKeyDown(Key.Up))
             {
-                eyePos += 0.1f;
+                _eyePos += 0.1f;
+            }
+
+            if (input.IsKeyDown(Key.Number3))
+            {
+                _is3D = true;
+            }
+
+            if (input.IsKeyDown(Key.Space))
+            {
+
+                _isPause = true;
+
+            }
+
+            if (input.IsKeyDown(Key.C))
+            {
+
+                _isPause = false;
+
+            }
+
+
+            if (input.IsKeyDown(Key.Number2))
+            {
+                _is3D = false;
             }
 
             if (input.IsKeyDown(Key.Down))
             {
-                eyePos -= 0.1f;
+                _eyePos -= 0.1f;
             }
 
             base.OnUpdateFrame(e);
@@ -233,7 +266,9 @@ namespace ComputeShader2DVortex
 
         private void SetShaderMatrices()
         {
-            _view = glm.lookAt(new vec3(0, 0, 5), new vec3(0, 0, 0), new vec3(0, 1, 0));
+            _view = glm.lookAt(new vec3(0, 0, _eyePos), 
+                new vec3(0, 0, 0), new vec3(0, 1, 0));
+            _model = new mat4(1.0f);
 
             _vortexShader.Use();
             _vortexShader.SetMatrix4("model", _model.ConvertToMatrix4());

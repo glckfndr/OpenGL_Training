@@ -1,6 +1,7 @@
 ﻿#version 430
 in float abs_velocity;
 
+//uniform sampler2D Texture;
 uniform vec4 Color;
 
 layout( location = 0 ) out vec4 FragColor;

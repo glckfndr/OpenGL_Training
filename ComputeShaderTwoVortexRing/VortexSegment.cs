@@ -29,7 +29,14 @@ namespace ComputeShaderTwoVortexRing
             return Velocity(r, Start, _dl, Gamma);
         }
 
-
+        /// <summary>
+        /// Швидкість від вихрового відрізку
+        /// </summary>
+        /// <param name="r">координати точки де визначається швидкість </param>
+        /// <param name="start">початок відрізку</param>
+        /// <param name="dl"></param>
+        /// <param name="gamma">циркуляція</param>
+        /// <returns></returns>
         public static Vector3D Velocity(Vector3D r, Vector3D start, Vector3D dl, double gamma)
         {
             var a = r - start;

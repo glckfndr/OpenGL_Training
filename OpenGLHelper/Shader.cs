@@ -97,7 +97,8 @@ namespace OpenGLHelper
             Handle.Use();
         }
 
-        public void Compute(MemoryBarrierFlags flag, int num_groups_x, int num_groups_y, int num_groups_z)
+        public void Compute(int num_groups_x, int num_groups_y, int num_groups_z, 
+            MemoryBarrierFlags flag = MemoryBarrierFlags.ShaderStorageBarrierBit)
         {
             Use();
             GL.DispatchCompute(num_groups_x, num_groups_y, num_groups_z);
@@ -182,6 +183,14 @@ namespace OpenGLHelper
             
             return Handle.GetSubroutineIndex(shaderType, subroutineName);
         }
+
+        public void SetSubroutineIndex(int subroutineIndex, int count)
+        {
+            GL.UniformSubroutines(ShaderType.VertexShader, count, ref subroutineIndex);
+            //return Handle.GetSubroutineIndex(shaderType, subroutineName);
+        }
+
+
 
     }
 }

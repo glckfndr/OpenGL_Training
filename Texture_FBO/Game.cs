@@ -13,8 +13,8 @@ namespace Texture_FBO
     {
         private string _type = "t";
         private Shader _shader;
-        private Texture _whiteTexHandle;
-        private Texture _renderTex;
+        private Texture2D _whiteTexHandle;
+        private Texture2D _renderTex;
         private float _angle;
 
         private mat4 _projection;
@@ -55,9 +55,9 @@ namespace Texture_FBO
 
             // One pixel white texture
             byte[] whiteTex = { 5, 55, 255, 255 };
-            _whiteTexHandle = new Texture(1, 1, whiteTex, TextureUnit.Texture1);
+            _whiteTexHandle = new Texture2D(1, 1, whiteTex, TextureUnit.Texture1);
             // Create the texture object
-            _renderTex = new Texture(512, 512, TextureUnit.Texture0);
+            _renderTex = new Texture2D(512, 512, TextureUnit.Texture0);
             // Create the depth buffer
             _depthBuf = new RenderBuffer(512, 512);
 

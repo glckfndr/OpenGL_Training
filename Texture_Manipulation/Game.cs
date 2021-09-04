@@ -17,7 +17,7 @@ namespace Texture_Manipulation
         private int[] _vertexArrayObject = new int[2];
         private int[] _vertexBufferObject = new int[2];
         private int _colorBufferObject;
-        private Texture _texture;
+        private Texture2D _texture;
         private (float[] vertices, uint[] indices) plain;
         private (float[] vertices, uint[] indices) triangle;
         private float time = 0.0f;
@@ -51,7 +51,7 @@ namespace Texture_Manipulation
             vortex0 = new Vortex(_center0, new Vector3(0, 0, _gamma));
             vortex1 = new Vortex(_center1, new Vector3(0, 0, -_gamma));
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-            _texture = new Texture("../../Resources/water2.jpg");
+            _texture = new Texture2D("../../Resources/water2.jpg");
             this.ClientSize = _texture.GetSize();
 
             _textureShader = new Shader("../../Shaders/textureShader.vert", "../../Shaders/textureShader.frag");

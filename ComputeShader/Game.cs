@@ -14,7 +14,7 @@ namespace ParticlesShader
     {
 
         private Shader _shader;
-        private int location;
+        //private int location;
         private uint nParticles = 8000;
         private VertexObject _particles;
         private float t = 0;
@@ -73,7 +73,7 @@ namespace ParticlesShader
             _model = new mat4(1.0f);
             _projection = glm.perspective(glm.radians(60.0f), (float)Width / Height, 0.3f, 100.0f);
 
-            Texture texture = new Texture("../../Textures/water2.jpg", TextureWrapMode.Repeat);
+            Texture2D texture = new Texture2D("../../Textures/water2.jpg", TextureWrapMode.Repeat);
             this.ClientSize = texture.GetSize();
 
             _particles = new VertexObject(_shader, texture,

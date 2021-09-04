@@ -25,12 +25,15 @@ namespace ComputeShaderFractal
         private float angle = 0.0f;
         private float rotSpeed = 60.0f;
         private float t = 0;
-        private int imgTex;
-        private Texture _texture;
+        private int _imgTex;
+        private Texture2D _texture;
+        private int _width = 512;
+        private int _height = 512;
 
 
 
-        public Game(int width, int height, string title) : base(width, height, GraphicsMode.Default, title)
+        public Game(int width, int height, string title) : 
+            base(width, height, GraphicsMode.Default, title)
         {
 
         }
@@ -38,11 +41,12 @@ namespace ComputeShaderFractal
         protected override void OnLoad(EventArgs e)
         {
             GL.Enable(EnableCap.DepthTest);
-            cube = new Cube(1.5f);
+            cube = new Cube(2.0f);
             _renderShader = new Shader("../../Shaders/ads.vert", "../../Shaders/ads.frag");
             _computeShader = new Shader("../../Shaders/mandelbrot.comp");
-            InitBuffers();
-            setWindow();
+            _texture = new Texture2D(_width, _height, 0);
+            //CreateTexture();
+            SetWindow();
 
             _renderShader.Use();
             _renderShader.SetVector4("LightPosition", new Vector4(0.0f, 0.0f, -1.0f, 1.0f));
@@ -50,20 +54,19 @@ namespace ComputeShaderFractal
             _renderShader.SetVector3("Kd", new Vector3(0.8f));
             _renderShader.SetVector3("Ka", new Vector3(0.2f));
             _renderShader.SetVector3("Ks", new Vector3(0.2f));
-            _renderShader.SetFloat("Shininess", 80.0f);
-            
+            _renderShader.SetFloat("Shininess", 180.0f);
+
             base.OnLoad(e);
         }
 
-        private void InitBuffers()
-        {
-            
-            imgTex = GL.GenTexture();
-            GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2D, imgTex);
-            GL.TexStorage2D(TextureTarget2d.Texture2D, 1, SizedInternalFormat.Rgba8, 256, 256);
-            GL.BindImageTexture(0, imgTex, 0, false, 0, TextureAccess.ReadWrite, SizedInternalFormat.Rgba8);
-        }
+        //private void CreateTexture()
+        //{
+        //    _imgTex = GL.GenTexture();
+        //    GL.ActiveTexture(TextureUnit.Texture0);
+        //    GL.BindTexture(TextureTarget.Texture2D, _imgTex);
+        //    GL.TexStorage2D(TextureTarget2d.Texture2D, 1, SizedInternalFormat.Rgba8, 256, 256);
+        //    GL.BindImageTexture(0, _imgTex, 0, false, 0, TextureAccess.ReadWrite, SizedInternalFormat.Rgba8);
+        //}
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
@@ -95,16 +98,18 @@ namespace ComputeShaderFractal
             float dy = cheight / Height;
 
             cheight -= deltaT * speed * dy;
-            setWindow();
+            SetWindow();
             angle += rotSpeed * deltaT;
             if (angle > 360.0f) angle -= 360.0f;
 
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            _computeShader.Use();
-            GL.DispatchCompute(256 / 32, 256 / 32, 1);
-            GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+            //_computeShader.Use();
+            _computeShader.Compute( _width / 32, _height / 32, 1, 
+                MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+            //GL.DispatchCompute(_width / 32, _height / 32, 1);
+            //GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
 
             _renderShader.Use();
             mat4 view = glm.lookAt(new vec3(0, 0, -4), new vec3(0, 0, 0), new vec3(0, 1, 0));
@@ -131,13 +136,13 @@ namespace ComputeShaderFractal
             base.OnResize(e);
         }
 
-        void setWindow()
+        private void SetWindow()
         {
             _computeShader.Use();
             float ar = 1.0f;
             float cwidth = cheight * ar;
 
-            Vector4 bbox = new Vector4(center.x -cwidth / 2.0f, center.y - cheight / 2.0f,
+            Vector4 bbox = new Vector4(center.x - cwidth / 2.0f, center.y - cheight / 2.0f,
             center.x + cwidth / 2.0f, center.y + cheight / 2.0f);
             _computeShader.SetVector4("CompWindow", bbox);
         }

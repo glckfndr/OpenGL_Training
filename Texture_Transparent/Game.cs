@@ -51,7 +51,7 @@ namespace Texture_Transparent
             _teaPot = new TeaPot(14, new mat4(1.0f));
             _sky = new SkyBox();
             GL.ActiveTexture(TextureUnit.Texture0);
-            _cubeTex = Texture.LoadCubeMap("../../Textures/cubemap_night/night");
+            _cubeTex = Texture2D.LoadCubeMap("../../Textures/cubemap_night/night");
             //_cubeTex = Texture.LoadCubeMap("../../Textures/Cube/pisa");
             
             base.OnLoad(e);

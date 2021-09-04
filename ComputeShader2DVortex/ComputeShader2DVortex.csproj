@@ -54,6 +54,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Vortex.cs" />
+    <Compile Include="VortexInitializer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -61,11 +62,13 @@
     <None Include="packages.config" />
     <None Include="Shaders\ads.frag" />
     <None Include="Shaders\ads.vert" />
+    <None Include="Shaders\clearTexture.comp" />
     <None Include="Shaders\particles.frag" />
     <None Include="Shaders\particles.vert" />
     <None Include="Shaders\vortex.frag" />
     <None Include="Shaders\vortex.vert" />
     <None Include="Shaders\vortexPosition2D.comp" />
+    <None Include="Shaders\vortexPosition2D05.comp" />
     <None Include="Shaders\vortexVelocity2D.comp" />
   </ItemGroup>
   <ItemGroup>

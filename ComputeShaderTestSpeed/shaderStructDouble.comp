@@ -1,0 +1,50 @@
+#version 430 
+layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+uniform int BufferSize;
+
+struct Vortex 
+{
+	dvec2 r;
+	double gamma;
+	double radius;
+	
+};
+
+int Step(double a, double x)
+{
+  return x > a? 1: 0;
+}
+
+dvec2 Velocity(dvec2 r, Vortex vortex)
+{
+    dvec2 dr = r - vortex.r;
+	double dist = length(dr);
+	double selector = step(vortex.radius, dist);
+	dist = selector * dist + (1.0 - selector) * vortex.radius;
+	double k = vortex.gamma/(dist*dist);
+	//return vortex.gamma * dvec2( - dr.y, dr.x)/(dist * dist);
+	 return k * dvec2( - dr.y, dr.x);
+	//double kk = 1/vortex.radius;
+	//return dvec2(kk,0);
+}
+
+layout(std430, binding = 0) buffer InputBufferA{Vortex vortex[];};
+layout(std430, binding = 1) buffer OutputBuffer{dvec2 velocity[];};
+
+void main()
+{
+	uint index = gl_GlobalInvocationID.x;
+	if(index >= BufferSize)
+	{
+		return;
+	}
+	dvec2 vel = dvec2(0,0);
+	dvec2 pos = vortex[index].r;
+	for(int i = 0; i <  BufferSize; i++)
+	{
+		vel += Velocity(pos, vortex[i]);
+	}
+	velocity[index].xy = vel;
+	//velocity[index].xy = pos*2.0;
+	//barrier();
+}

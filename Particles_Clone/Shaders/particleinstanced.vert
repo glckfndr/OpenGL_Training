@@ -26,10 +26,12 @@ void main()
     vec3 g = NormalMatrix * Gravity;
     vec3 v0 = NormalMatrix * VertexInitialVelocity;
 
-    if( Time > StartTime ) {
+    if( Time > StartTime ) 
+	{
         float t = Time - StartTime;
 
-        if( t < ParticleLifetime ) {
+        if( t < ParticleLifetime ) 
+		{
             Position += v0 * t + Gravity * t * t;
         }
     }

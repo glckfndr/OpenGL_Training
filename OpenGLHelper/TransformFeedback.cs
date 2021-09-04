@@ -8,6 +8,7 @@ namespace OpenGLHelper
         public TransformFeedback()
         {
             _handle = GL.GenTransformFeedback();
+            Bind();
         }
 
         public void Bind(TransformFeedbackTarget target = TransformFeedbackTarget.TransformFeedback)
@@ -27,6 +28,7 @@ namespace OpenGLHelper
         
         public void Begin(TransformFeedbackPrimitiveType type = TransformFeedbackPrimitiveType.Points)
         {
+            Bind();
             GL.BeginTransformFeedback(type);
         }
         

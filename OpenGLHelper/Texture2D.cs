@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK.Graphics.OpenGL4;
+using StbImageSharp;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using StbImageSharp;
 using GL = OpenTK.Graphics.OpenGL4.GL;
 using InternalFormat = OpenTK.Graphics.OpenGL4.InternalFormat;
 using PixelFormat = OpenTK.Graphics.OpenGL4.PixelFormat;
@@ -19,7 +17,7 @@ using TextureWrapMode = OpenTK.Graphics.OpenGL4.TextureWrapMode;
 
 namespace OpenGLHelper
 {
-    public class Texture
+    public class Texture2D
     {
         private readonly int _handle;
         private int _width;
@@ -27,7 +25,7 @@ namespace OpenGLHelper
         private TextureUnit _unit;
 
         // Create texture from path.
-        public Texture(string path, TextureWrapMode mode = TextureWrapMode.ClampToBorder,
+        public Texture2D(string path, TextureWrapMode mode = TextureWrapMode.ClampToBorder,
                         TextureUnit unit = TextureUnit.Texture0,
                         TextureMinFilter minFilter = TextureMinFilter.Linear,
                         TextureMagFilter magFilter = TextureMagFilter.Linear
@@ -90,15 +88,15 @@ namespace OpenGLHelper
             // NOTE: The default settings for both of these are LinearMipmap. If you leave these as default but don't generate mipmaps,
             // your image will fail to Render at all (usually resulting in pure black instead).
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
-                                (int) minFilter);
+                                (int)minFilter);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
-                                (int) magFilter);
+                                (int)magFilter);
 
             // Now, set the wrapping mode. S is for the X axis, and T is for the Y axis.
             // We set this to Repeat so that textures will repeat when wrapped. Not demonstrated here since the texture coordinates exactly match
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int) mode);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int) mode);
-            
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)mode);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)mode);
+
 
             // Next, generate mipmaps.
             // Mipmaps are smaller copies of the texture, scaled down. Each mipmap level is half the size of the previous one
@@ -108,8 +106,8 @@ namespace OpenGLHelper
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
         }
 
-        public Texture(int width, int height, TextureWrapMode mode = TextureWrapMode.ClampToBorder, int unit = 0,
-            TextureUnit textureUnit = TextureUnit.Texture0)
+        public Texture2D(int width, int height, int unit, TextureUnit textureUnit = TextureUnit.Texture0,
+                                                        TextureWrapMode mode = TextureWrapMode.ClampToBorder)
         {
             _width = width;
             _height = height;
@@ -119,18 +117,36 @@ namespace OpenGLHelper
             // GL.ActiveTexture(TextureUnit.Texture0);
             //  GL.BindTexture(TextureTarget.Texture2D, _handle);
             GL.TexStorage2D(TextureTarget2d.Texture2D, 1, SizedInternalFormat.Rgba8, _width, _height);
+            //GL.TexStorage2D(TextureTarget2d.Texture2D, 1, SizedInternalFormat.Rgba32f, _width, _height);
             GL.BindImageTexture(unit, _handle, 0, false, 0, TextureAccess.ReadWrite, SizedInternalFormat.Rgba8);
+            //GL.BindImageTexture(unit, _handle, 0, false, 0, TextureAccess.ReadWrite, SizedInternalFormat.Rgba32f);
 
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter,
-                (int) TextureMinFilter.Linear);
+                                                                                 (int)TextureMinFilter.Linear);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter,
-                (int) TextureMagFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int) mode);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int) mode);
+                                                                                (int)TextureMagFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)mode);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)mode);
+        }
+
+        public Texture2D(int width, int height, TextureUnit textureUnit = TextureUnit.Texture0,
+                                              TextureMinFilter textureMinFilter = TextureMinFilter.Linear,
+                                              TextureMagFilter textureMagFilter = TextureMagFilter.Linear)
+        {
+            _width = width;
+            _height = height;
+            _unit = textureUnit;
+            _handle = GL.GenTexture();
+            Use();
+
+            GL.TexStorage2D(TextureTarget2d.Texture2D, 1, SizedInternalFormat.Rgba8, _width, _height);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)textureMinFilter);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)textureMagFilter);
         }
 
 
-        public Texture(int width, int height, byte[] data, TextureUnit textureUnit = TextureUnit.Texture0)
+        public Texture2D(int width, int height, byte[] data, TextureUnit textureUnit = TextureUnit.Texture0)
         {
             _width = width;
             _height = height;
@@ -139,26 +155,16 @@ namespace OpenGLHelper
             Use();
             // GL.ActiveTexture(TextureUnit.Texture0);
             //  GL.BindTexture(TextureTarget.Texture2D, _handle);
-            GL.TexStorage2D(TextureTarget2d.Texture2D, 1, SizedInternalFormat.Rgba8, 
+            GL.TexStorage2D(TextureTarget2d.Texture2D, 1, SizedInternalFormat.Rgba8,
                                 _width, _height);
-            GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, _width, _height, 
+            GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, _width, _height,
                     PixelFormat.Rgba, PixelType.UnsignedByte, data);
         }
 
-        public Texture(int width, int height, TextureUnit textureUnit = TextureUnit.Texture0, 
-                        TextureMinFilter textureMinFilter = TextureMinFilter.Linear, TextureMagFilter textureMagFilter = TextureMagFilter.Linear)
-        {
-            _width = width;
-            _height = height;
-            _unit = textureUnit;
-            _handle = GL.GenTexture();
-            Use();
+        
 
-            GL.TexStorage2D(TextureTarget2d.Texture2D, 1, SizedInternalFormat.Rgba8, _width, _height);
 
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int) textureMinFilter);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)textureMagFilter);
-        }
+
 
         // Activate texture
         // Multiple textures can be bound, if your shader needs more than just one.
@@ -222,7 +228,7 @@ namespace OpenGLHelper
             texID = GL.GenTexture();
             GL.BindTexture(TextureTarget.TextureCubeMap, texID);
 
-            string[] suffixes = new string[] {"posx", "negx", "posy", "negy", "posz", "negz"};
+            string[] suffixes = new string[] { "posx", "negx", "posy", "negy", "posz", "negz" };
             int w = 0, h = 0;
             TextureTarget[] targets = new TextureTarget[]{
                 TextureTarget.TextureCubeMapPositiveX,
@@ -241,7 +247,7 @@ namespace OpenGLHelper
             //reader.Read()
             //var bytes = File.ReadAllBytes(texName);
             //var data = StbImage.LoadFromMemory(bytes, StbImage.STBI_rgb);
-            int nch = 0;
+            //int nch = 0;
             var data = stbi_loadB(texName, ref w, ref h).Scan0;
             //var data = LoadTextureAsBytes(texName, ref w, ref h);
             //var data2 = stbi_loadB(texName, ref w, ref h);
@@ -253,7 +259,7 @@ namespace OpenGLHelper
 
 
 
-            GL.TexStorage2D(TextureTarget2d.TextureCubeMap, 1, 
+            GL.TexStorage2D(TextureTarget2d.TextureCubeMap, 1,
                 SizedInternalFormat.Rgba8, w, h);
             GL.TexSubImage2D(targets[0],
                 0, 0, 0, w, h, PixelFormat.Rgba, PixelType.UnsignedByte, data);
@@ -273,25 +279,20 @@ namespace OpenGLHelper
 
                 //data = stbi_loadf(texName.c_str(), &w, &h, NULL, 3);
                 GL.TexSubImage2D(targets[i], 0,
-                    0, 0, w, h, PixelFormat.Rgba , 
+                    0, 0, w, h, PixelFormat.Rgba,
                     PixelType.UnsignedByte, data);
 
             }
 
-            GL.TexParameter(TextureTarget.TextureCubeMap, 
-                TextureParameterName.TextureMagFilter, 
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter,
                 (int)TextureMagFilter.Linear);
-            GL.TexParameter(TextureTarget.TextureCubeMap, 
-                        TextureParameterName.TextureMinFilter, 
-                        (int)TextureMinFilter.Nearest); 
-            GL.TexParameter(TextureTarget.TextureCubeMap, 
-                TextureParameterName.TextureWrapS, 
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter,
+                        (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS,
                 (int)TextureWrapMode.ClampToEdge);
-            GL.TexParameter(TextureTarget.TextureCubeMap, 
-                TextureParameterName.TextureWrapT, 
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT,
                 (int)TextureWrapMode.ClampToEdge);
-            GL.TexParameter(TextureTarget.TextureCubeMap, 
-                TextureParameterName.TextureWrapR, 
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR,
                 (int)TextureWrapMode.ClampToEdge);
 
             return texID;
@@ -306,7 +307,7 @@ namespace OpenGLHelper
         //    {
         //        stream.CopyTo(memoryStream);
         //        image = Stbi.LoadFromMemory(memoryStream, StbImage.STBI_rgb);
-                
+
         //        w = image.Width;
         //        h = image.Height;
         //        numChannels = image.NumChannels;
@@ -346,13 +347,13 @@ namespace OpenGLHelper
             //    data.Scan0);
 
 
-            GL.TexParameter(TextureTarget.Texture2D,TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             return tex;
 
         }
 
-        static private BitmapData stbi_loadB(string path, ref int w, ref int h)
+        private static BitmapData stbi_loadB(string path, ref int w, ref int h)
         {
             using (var image = new Bitmap(path))
             {
@@ -361,7 +362,7 @@ namespace OpenGLHelper
                 var data = image.LockBits(new Rectangle(0, 0, w, h),
                     ImageLockMode.ReadOnly, //image.PixelFormat
                     System.Drawing.Imaging.PixelFormat.Format32bppRgb
-                   // System.Drawing.Imaging.PixelFormat.Format32bppArgb
+                    // System.Drawing.Imaging.PixelFormat.Format32bppArgb
                     );
 
                 return data;
@@ -373,7 +374,7 @@ namespace OpenGLHelper
 
         public static byte[] LoadTextureAsBytes(string path, ref int w, ref int h)
         {
-            
+
             byte[] buffer = File.ReadAllBytes(path);
 
             ImageResult image = ImageResult.FromMemory(buffer, ColorComponents.RedGreenBlueAlpha);
@@ -381,7 +382,7 @@ namespace OpenGLHelper
             h = image.Height;
             //return image.Data;
             byte[] data = image.Data;
-            
+
             //ConvertRgbaToBgra(image, data);
 
             return data;

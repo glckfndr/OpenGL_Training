@@ -11,12 +11,11 @@ namespace ComputeShaderVortex
 {
     public class Game : GameWindow
     {
-
         private Shader _particleShader;
         private Shader _vortexShader;
         private Shader _adsShader;
         private Shader _computeShader;
-        private vec3 nParticles = new vec3(50, 50, 50);
+        private vec3 nParticles = new vec3(64, 64, 32);
         private int totalParticles;
         private int vortexNumber = 72;
         private float eyePos = 3.0f;
@@ -97,17 +96,17 @@ namespace ComputeShaderVortex
 
             // Execute the compute shader
             _computeShader.Use();
-            posBuf.Bind(0);
-            velBuf.Bind(1);
-            vortexBuf.Bind(2);
-            startPosBuf.Bind(3);
+            posBuf.BindLayout(0);
+            velBuf.BindLayout(1);
+            vortexBuf.BindLayout(2);
+            startPosBuf.BindLayout(3);
 
             _computeShader.SetInt("vortexNumber", vortexNumber);
             _computeShader.SetFloat("gamma", _gamma);
 
            for (int k = 0; k < 3; k++)
-                _computeShader.Compute(MemoryBarrierFlags.ShaderStorageBarrierBit, 
-                                totalParticles / 100, 1, 1);
+                _computeShader.Compute(totalParticles / 64, 1, 1, 
+                    MemoryBarrierFlags.ShaderStorageBarrierBit);
 
             // Draw the scene
             SetMatrices();
@@ -155,11 +154,8 @@ namespace ComputeShaderVortex
 
             // Set up the VAO
             _particleVAO = new VertexArray();
-            _particleVAO.Bind();
-
             posBuf.SetAttribPointer(0, 4);
             velBuf.SetAttribPointer(1, 4);
-
             _particleVAO.Unbind();
 
 

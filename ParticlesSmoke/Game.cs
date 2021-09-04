@@ -25,7 +25,7 @@ namespace ParticlesSmoke
         private float _time;
         private float _deltaT;
 
-        private Texture _texture;
+        private Texture2D _texture;
 
 
         private float t;
@@ -73,7 +73,7 @@ namespace ParticlesSmoke
 
             const string texName = "../../Textures/smoke.png";
             //const string texName = "../../Textures/water2.jpg";
-            _texture = new Texture(texName, TextureWrapMode.Repeat, TextureUnit.Texture0, TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+            _texture = new Texture2D(texName, TextureWrapMode.Repeat, TextureUnit.Texture0, TextureMinFilter.Nearest, TextureMagFilter.Nearest);
             GL.Enable(EnableCap.PointSprite);
             GL.PointParameter(PointParameterName.PointSpriteCoordOrigin, (int)PointSpriteCoordOriginParameter.LowerLeft);
             _texture.Use();

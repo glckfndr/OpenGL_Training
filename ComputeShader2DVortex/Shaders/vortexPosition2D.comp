@@ -1,8 +1,12 @@
 ﻿#version 430
 layout(local_size_x = 128) in;
 
-uniform float deltaTime = 0.0002;
-//uniform int vortexNumber;
+uniform float deltaTime;
+uniform int Width = 1024;
+uniform int Height = 1024;
+uniform float scaler = 3.0; // plane width
+//layout( binding = 0, rgba32f) uniform image2D ColorImg;
+layout( binding = 0, rgba8) uniform image2D ColorImg;
 
 struct Vortex
 {
@@ -10,7 +14,6 @@ struct Vortex
         float gamma;
 		float rankineRadius;
 };
-
 layout(std430, binding = 0) buffer VortexData 
 {
   Vortex vortex[];
@@ -21,10 +24,37 @@ layout(std430, binding = 1) buffer VortexVelocity
   vec2 vortexVelocity[];
 };
 
+const float a = 2.0;
+
 void main() 
 {
+  // index of vortex - number of thread
   uint idx = gl_GlobalInvocationID.x;
   vec2 p = vortex[idx].r;
   p += vortexVelocity[idx] * deltaTime;
+  // new position of vortex
+  
+  //if(p.x > 1.0)
+//	p.x = -a + p.x;
+ // else if(p.x < -1.0)
+//	p.x = a + p.x;
+
   vortex[idx].r = p;
+  
+  float velocity = length(vortexVelocity[idx].xy)/4;
+
+  // koef is introduced to avoid if-operator
+  float koef2 = step(0.5, velocity);
+  float koef3 = step(1.0, velocity);
+ 
+  vec4 color3  = vec4(velocity, 0.25 * velocity, 0, 1);
+  vec4 color1  = vec4(0, velocity + 0.25, 0.25 + 0.25 * velocity, 1);
+  vec4 color2  = vec4(0.25 * velocity + 0.5, 0, velocity + 0.5, 1);
+  
+  // result color
+  vec4 color = ((1 - koef2) * color1 + koef2 * color2) * (1 - koef3) + koef3 * color3;
+  // we suppose that world coordinates (0.0,0.0) is in the center of texture (Width/2, Height/2) 
+  ivec2 textureCoords = ivec2((0.5 * scaler + p.x) / scaler * Width, (0.5 * scaler + p.y) / scaler * Height) ;
+  // set pixel color in ColorImg, pixel coordinate is textureCoords
+  imageStore(ColorImg, textureCoords, color);
 }

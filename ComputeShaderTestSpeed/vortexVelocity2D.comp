@@ -1,0 +1,72 @@
+﻿#version 430
+layout(local_size_x = 128) in;
+
+//uniform float DeltaT = 0.0002;
+uniform int BufferSize;
+
+struct Vortex
+{
+	vec2 r;
+	float gamma;
+	float rankinRadius;
+	//vec3 dummy0;
+	//float dummy1;
+};
+
+layout(std430, binding = 0) buffer VortexData 
+{
+	Vortex vortex[];
+};
+
+layout(std430, binding = 1) buffer VortexVelocity 
+{
+	vec2 vortexVelocity[];
+};
+
+#define PI 3.1415926535
+#define a 2.0
+const highp float koef = 1.0/2.0/PI;
+const highp float k2 = 2.0 * PI / a;
+const highp float a2 = 2*a;
+
+vec2 Velocity2D(vec2 r, Vortex vortex)
+{
+	highp vec2 dr = r - vortex.r;
+	highp float dist = length(dr);
+	highp float self = step(dist, vortex.rankinRadius);
+	
+	highp float denom = (1.0-self)*a2 * (cosh(k2 * dr.y) - cos(k2 * dr.x)) + 
+									self * a2 * k2 * k2 * 0.5* vortex.rankinRadius * vortex.rankinRadius;
+	highp float u = - vortex.gamma * sinh(k2 * dr.y) / denom;  
+	highp float v =   vortex.gamma * sin(k2 * dr.x) / denom;
+	//float vx = - koef * vortex.gamma * dr.y / (dist * dist + self);
+	//float vy =  koef * vortex.gamma * dr.x / (dist * dist + self);
+	u = u;// - vx;
+	v = v;// - vy;
+
+//	float selector = step(vortex.rankinRadius, dist);
+//	dist = selector * dist + (1 - selector)*vortex.rankinRadius;
+//	vx = - koef * vortex.gamma * dr.y / (dist * dist);
+//	vy =  koef * vortex.gamma * dr.x / (dist * dist);
+//	u =  u + vx;
+//	v =  v + vy;
+	//if(u > 10) u =1;
+	//if(v > 10) v =1;
+
+	//return koef * vortex.gamma * vec2( -dr.y, dr.x)/(dist*dist);
+	return vec2(  u ,  v );
+
+}
+
+void main() 
+{
+  uint idx = gl_GlobalInvocationID.x;
+
+  vec2 p = vortex[idx].r;
+  highp vec2 velocity = vec2(0.0, 0.0);
+  for(int i = 0; i < BufferSize; i++)
+  {
+	velocity += Velocity2D(p, vortex[i]);
+  }
+	vortexVelocity[idx] = velocity;
+}

@@ -12,7 +12,6 @@ namespace ComputeShaderGravity
 {
     public class Game : GameWindow
     {
-
         private Shader _shader;
         private Shader _adsShader;
         private Shader _computeShader;
@@ -20,8 +19,8 @@ namespace ComputeShaderGravity
         private int totalParticles;
 
         private float _time;
-        private float _deltaT;
-        private float _speed = 35.0f;
+        private float _deltaT = 0.005f;
+        private float _speed = 20.0f;
         private float _angle;
 
         private VertexArray _particleVAO;
@@ -30,7 +29,6 @@ namespace ComputeShaderGravity
         private vec4 _blackHole1 = new vec4(3.9f, 1, 0, 0);
         private vec4 _blackHole2 = new vec4(-3.9f, -1, 0, 0.8f);
 
-        private float t;
         private float dt;
         private mat4 _projection;
         private mat4 _view;
@@ -52,7 +50,7 @@ namespace ComputeShaderGravity
             _adsShader = new Shader("../../Shaders/ads.vert", "../../Shaders/ads.frag");
 
             _computeShader = new Shader("../../Shaders/particles.comp");
-            _sphere1 = new Sphere(0.2f,32,32);
+            _sphere1 = new Sphere(0.2f, 32, 32);
             _sphere2 = new Sphere(0.2f, 32, 32);
             InitBuffers();
 
@@ -69,20 +67,8 @@ namespace ComputeShaderGravity
         protected override void OnRenderFrame(FrameEventArgs e)
         {
 
-            if (_time == 0.0f)
-            {
-                _deltaT = 0.0f;
-            }
-            else
-            {
-                _deltaT = t - _time;
-            }
-            _time = t;
-            if (true)
-            {
-                _angle += _speed * _deltaT;
-                if (_angle > 360.0f) _angle -= 360.0f;
-            }
+            _angle += _speed * _deltaT;
+            if (_angle > 360.0f) _angle -= 360.0f;
 
             // Rotate the attractors ("black holes")
             _model = new mat4(1.0f);
@@ -92,19 +78,22 @@ namespace ComputeShaderGravity
 
             // Execute the compute shader
             _computeShader.Use();
-            t += 0.005f;
-            var x = (float)(0.1 * Math.Sin(t));
+            // var x = (float)(0.1 * Math.Sin(t));
             _computeShader.SetVector3("BlackHolePos1", new Vector3(att1.x, att1.y, att1.z));
             _computeShader.SetVector3("BlackHolePos2", new Vector3(att2.x, att2.y, att2.z));
-            _computeShader.Compute(MemoryBarrierFlags.ShaderStorageBarrierBit, totalParticles / 1000, 1, 1);
-            
+            _computeShader.SetFloat("DeltaT", _deltaT);
+            _computeShader.Compute(totalParticles / 1000, 1, 1,
+                MemoryBarrierFlags.ShaderStorageBarrierBit);
+
             // Draw the scene
             _shader.Use();
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             SetMatrices();
 
             // Draw the particles
-            _shader.SetVector4("Color", new Vector4(1, 0.5f, 0, 0.2f));
+            //_shader.SetVector4("Color", new Vector4(1, 0.5f, 0, 0.2f));
+            
+            _shader.SetVector4("Color", new Vector4(1.0f, 0.2f, 0.0f, 0.4f));
             GL.PointSize(1.0f);
             //_particleVAO.Bind();
             //GL.DrawArrays(PrimitiveType.Points, 0, totalParticles);
@@ -113,27 +102,27 @@ namespace ComputeShaderGravity
 
             float[] data = new float[] { att1.x, att1.y, att1.z, 1.0f, att2.x, att2.y, att2.z, 1.0f };
 
-           // _blackHoleBuffer.SetSubData(IntPtr.Zero, data.Length * sizeof(float), data);
+            // _blackHoleBuffer.SetSubData(IntPtr.Zero, data.Length * sizeof(float), data);
             _adsShader.Use();
             _adsShader.SetVector3("LightIntensity", new Vector3(0.95f, 0.95f, 2.0f));
             _adsShader.SetVector3("Kd", new Vector3(0.2f, 0.2f, 0.9f));
-            _adsShader.SetVector3("Ka", new Vector3(0.1f, 0.1f,0.2f));
-            _adsShader.SetVector3("Ks", new Vector3(1.0f, 0.5f,0.0f));
+            _adsShader.SetVector3("Ka", new Vector3(0.1f, 0.1f, 0.2f));
+            _adsShader.SetVector3("Ks", new Vector3(1.0f, 0.5f, 0.0f));
             _adsShader.SetFloat("Shininess", 50.0f);
 
-            
+
             _model = new mat4(1.0f);
             _model = glm.translate(_model, new vec3(att1.x, att1.y, att1.z));
             SetMatrices2();
             var lp = new Vector4(0.0f, 0.0f, 0.0f, 1.0f);
             var view = _view.ConvertToMatrix4();
-            
+
             _adsShader.SetVector4("LightPosition", view * lp);
             _sphere1.Render();
-            
+
             _adsShader.Use();
-            _adsShader.SetVector3("LightIntensity", new Vector3(1,1,2.0f));
-            
+            _adsShader.SetVector3("LightIntensity", new Vector3(1, 1, 2.0f));
+
             _adsShader.SetVector3("Kd", new Vector3(0.2f, 0.9f, 0.2f));
             _adsShader.SetVector3("Ks", new Vector3(1.0f, 0.5f, 0.0f));
             _adsShader.SetVector3("Ka", new Vector3(0.1f, 0.2f, 0.1f));
@@ -177,8 +166,8 @@ namespace ComputeShaderGravity
 
 
             // Set up a buffer and a VAO for drawing the attractors (the "black holes")
-           //_blackHoleBuffer = new ArrayBuffer(BufferUsageHint.DynamicDraw);
-           // _blackHoleBuffer.Allocate(8 * sizeof(float));
+            //_blackHoleBuffer = new ArrayBuffer(BufferUsageHint.DynamicDraw);
+            // _blackHoleBuffer.Allocate(8 * sizeof(float));
 
             //_blackHoleVAO = new VertexArray();
             //_blackHoleBuffer.SetAttribPointer(0, 4);
@@ -233,7 +222,7 @@ namespace ComputeShaderGravity
                         var r = rnd.NextDouble();
                         var x = (float)(r * Math.Sin(theta) * Math.Cos(phi));
                         var y = (float)(r * Math.Sin(theta) * Math.Sin(phi));
-                        var z =(float) (r * Math.Cos(theta));
+                        var z = (float)(r * Math.Cos(theta));
                         var w = 1.0f;
 
                         initialPosition.Add(x);
@@ -259,7 +248,7 @@ namespace ComputeShaderGravity
             base.OnUpdateFrame(e);
         }
 
-        
+
 
         private void SetMatrices()
         {
@@ -279,7 +268,7 @@ namespace ComputeShaderGravity
             mat3 norm = new mat3(new vec3(mv[0]), new vec3(mv[1]), new vec3(mv[2]));
             _adsShader.Use();
             _adsShader.SetMatrix3("NormalMatrix", norm.ConvertToMatrix3());
-            
+
             _adsShader.SetMatrix4("model", _model.ConvertToMatrix4());
             _adsShader.SetMatrix4("projection", _projection.ConvertToMatrix4());
             _adsShader.SetMatrix4("view", _view.ConvertToMatrix4());

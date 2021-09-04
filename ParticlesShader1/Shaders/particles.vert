@@ -5,6 +5,7 @@ layout (location = 0) in vec3 VertexPosition;
 layout (location = 1) in vec3 VertexVelocity;
 layout (location = 2) in float VertexAge;
 
+uniform sampler1D RandomTex;
 // Render pass
 uniform int Pass;
 
@@ -20,19 +21,19 @@ out vec2 TexCoord;          // Texture coordinate
 
 uniform float Time;               // Simulation time
 uniform float DeltaT;             // Elapsed time between frames
-uniform vec3 Accel;               // Particle acceleration (gravity)
+uniform vec3 Acceleration;        // Particle acceleration (gravity)
 uniform float ParticleLifetime;   // Particle lifespan
 uniform vec3 Emitter = vec3(0);   // World position of the emitter.
 uniform mat3 EmitterBasis;        // Rotation that rotates y axis to the direction of emitter
 uniform float ParticleSize;       // Size of particle
 
-//uniform mat4 MV;    // View * Model
-//uniform mat4 Proj;  // Projection matrix
-uniform mat4 model;  // Projection matrix
-uniform mat4 view;  // Projection matrix
-uniform mat4 projection;  // Projection matrix
+//uniform mat4 MV;			// View * Model
+//uniform mat4 Proj;		// Projection matrix
+uniform mat4 model;			// Projection matrix
+uniform mat4 view;			// Projection matrix
+uniform mat4 projection;	// Projection matrix
 
-uniform sampler1D RandomTex;
+
 
 // Offsets to the position in camera coordinates for each vertex of the particle's quad
 const vec3 offsets[] = vec3[](vec3(-0.5,-0.5,0), vec3(0.5,-0.5,0), vec3(0.5,0.5,0),
@@ -65,14 +66,14 @@ void update()
 	{
         // The particle is alive, update.
         Position = VertexPosition + VertexVelocity * DeltaT;
-        Velocity = VertexVelocity + Accel * DeltaT;
+        Velocity = VertexVelocity + Acceleration * DeltaT;
         Age = VertexAge + DeltaT;
     }
 }
 
 void render() 
 {
-    Transp = 0.0;
+    Transp = 0.0; 
     vec3 posCam = vec3(0.0);
     if(VertexAge >= 0.0) 
 	{
@@ -80,13 +81,12 @@ void render()
         Transp = clamp(1.0 - VertexAge / ParticleLifetime, 0, 1);
     }
     TexCoord = texCoords[gl_VertexID];
-
-    gl_Position = projection * vec4(posCam,1)  ;
+	gl_Position = projection * vec4(posCam,1);
 }
 
 void main() 
 {
-    if( Pass == 1 )
+    if(Pass == 1)
         update();
     else
         render();

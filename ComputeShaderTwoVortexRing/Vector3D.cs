@@ -1,13 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ComputeShaderTwoVortexRing
 {
-    struct Vector3D
+    internal struct Vector3D
     {
+        public bool Equals(Vector3D other)
+        {
+            return X.Equals(other.X) && Y.Equals(other.Y) && Z.Equals(other.Z);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Vector3D other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = X.GetHashCode();
+                hashCode = (hashCode * 397) ^ Y.GetHashCode();
+                hashCode = (hashCode * 397) ^ Z.GetHashCode();
+                return hashCode;
+            }
+        }
+
         public double X;
         public double Y;
         public double Z;
@@ -71,9 +88,7 @@ namespace ComputeShaderTwoVortexRing
         {
             return new Vector3D(a.X / b, a.Y / b, a.Z / b);
         }
-
         
-
         public static bool operator ==(Vector3D a, double b)
         {
             return a.X == b && a.Y == b && a.Z == b;
@@ -84,6 +99,6 @@ namespace ComputeShaderTwoVortexRing
             return !(a == b);
         }
 
-        
+
     }
 }

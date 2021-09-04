@@ -45,10 +45,10 @@ namespace ComputeShaderGetData
             var bufferC = new StorageBuffer(BufferUsageHint.DynamicDraw);
             bufferC.SetData(C, 2);
 
-            shader.Compute(MemoryBarrierFlags.ShaderImageAccessBarrierBit |
-                           MemoryBarrierFlags.ShaderStorageBarrierBit |
-                           MemoryBarrierFlags.BufferUpdateBarrierBit,
-                64, 1, 1);
+            shader.Compute(64, 1, 1,
+                MemoryBarrierFlags.ShaderImageAccessBarrierBit |
+                MemoryBarrierFlags.ShaderStorageBarrierBit |
+                MemoryBarrierFlags.BufferUpdateBarrierBit);
 
             for (int i = 0; i < arraySize; ++i)
             {

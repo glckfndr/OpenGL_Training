@@ -11,6 +11,6 @@ uniform mat4 projection;
 
 void main()
 {
-    absVelocity = length(Velocity)/4;
+    absVelocity = length(Velocity)/2.2;
     gl_Position =  projection * view * model *  VertexPosition ;
 }

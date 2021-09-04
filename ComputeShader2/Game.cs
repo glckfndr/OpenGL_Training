@@ -36,7 +36,7 @@ namespace ComputeShaderCloth
         private mat4 _projection;
         private mat4 _view;
         private mat4 _model;
-        private Texture _texture;
+        private Texture2D _texture;
         private const int PRIM_RESTART = 0xffffff;
 
         public Game(int width, int height, string title) : base(width, height, GraphicsMode.Default, title)
@@ -74,7 +74,7 @@ namespace ComputeShaderCloth
             _computeShader.SetFloat("RestLengthDiag", (float)Math.Sqrt(dx * dx + dy * dy));
 
             //glActiveTexture(GL_TEXTURE0);
-            _texture = new Texture("../../Textures/me_textile.png", TextureWrapMode.Repeat);
+            _texture = new Texture2D("../../Textures/me_textile.png", TextureWrapMode.Repeat);
             _texture.Use();
             base.OnLoad(e);
         }
@@ -175,17 +175,19 @@ namespace ComputeShaderCloth
 
             for (int i = 0; i < 1000; i++)
             {
-                _computeShader.Compute(MemoryBarrierFlags.ShaderStorageBarrierBit, (int)(_numberOfParticles.x / 10), (int)(_numberOfParticles.y / 10), 1);
+                _computeShader.Compute((int)(_numberOfParticles.x / 10), (int)(_numberOfParticles.y / 10), 1,
+                    MemoryBarrierFlags.ShaderStorageBarrierBit);
                 // Swap _buffers
                 _readBuffer = 1 - _readBuffer;
-                positionBuffers[_readBuffer].Bind(0);
-                positionBuffers[1 - _readBuffer].Bind(1);
-                _velocityBuffers[_readBuffer].Bind(2);
-                _velocityBuffers[1 - _readBuffer].Bind(3);
+                positionBuffers[_readBuffer].BindLayout(0);
+                positionBuffers[1 - _readBuffer].BindLayout(1);
+                _velocityBuffers[_readBuffer].BindLayout(2);
+                _velocityBuffers[1 - _readBuffer].BindLayout(3);
             }
 
             // Compute the normals
-            _computeNormalShader.Compute(MemoryBarrierFlags.ShaderStorageBarrierBit, (int)(_numberOfParticles.x / 10), (int)(_numberOfParticles.y / 10), 1);
+            _computeNormalShader.Compute( (int)(_numberOfParticles.x / 10), (int)(_numberOfParticles.y / 10), 1,
+                MemoryBarrierFlags.ShaderStorageBarrierBit);
 
 
             _angle += 0.005f;
