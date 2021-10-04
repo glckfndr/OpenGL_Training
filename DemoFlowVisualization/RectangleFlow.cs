@@ -33,9 +33,7 @@ namespace DemoFlowVisualization
         private Vector _flowVelovity = new Vector(1.0, 0.0);
         private StorageBuffer _startPos;
         private VertexArray _particleVAO;
-        private mat4 _view;
-        private mat4 _model;
-        private mat4 _proj;
+        private MvpMatrix _mvp = new MvpMatrix();
         private float _eyePos = 10.0f;
         private float _angle = 0;
         private int Height;
@@ -71,14 +69,14 @@ namespace DemoFlowVisualization
 
         private void SetGeometryAndVortexSystem()
         {
-            var sp = CreatePolygons();
+            var shapeCollection = GetShapeCollection();
             var ds = new Discretizator(0.1, 0.1);
-            _vortexSystem = new VortexSystem(sp, ds, new RankinVortex());
+            _vortexSystem = new VortexSystem(shapeCollection, ds, new RankinVortex());
             _vortexSystem.FlowVelocity = _flowVelovity;
             _vortexSystem.FirstStep();
         }
 
-        private GeometryShapeCollection CreatePolygons()
+        private GeometryShapeCollection GetShapeCollection()
         {
 
             var polygonPoints = new List<Vector>
@@ -89,25 +87,15 @@ namespace DemoFlowVisualization
                 new Vector(0.5, -0.5),
 
             };
-            
+
             _bogyTriangles = new List<Vector2>();
             GeometryShapeCollection shapeCollection = new GeometryShapeCollection();
 
             GeometryShape polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.5,1.75), 30, new Vector(2.5, -0.75));
+            polygon.SetAll(new Vector(0.5, 1.75), 30, new Vector(2.5, -0.75));
             _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
             shapeCollection.AddShape(polygon);
 
-            //GeometryShape polygon1 = new GeometryShape(new List<Vector>
-            //{
-            //    new Vector(1.2, -0.6),
-            //    new Vector(1.9, 0.5),
-            //    new Vector(2.1, -0.4),
-            //    new Vector(1.9, -1.6),
-            //    //new Vector(0.25,-0.1)
-            //}, true);
-
-            //GeometryShape polygon1 = new GeometryShape(polygonPoints, true);
             polygon = new GeometryShape(polygonPoints, true);
             polygon.SetAll(new Vector(0.6, 1.2), 0, new Vector(0, -0.75));
             _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
@@ -123,26 +111,10 @@ namespace DemoFlowVisualization
             polygon.SetAll(new Vector(0.5, 1.0), 30, new Vector(2, 1.5));
             _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
             shapeCollection.AddShape(polygon);
-            
+
             return shapeCollection;
         }
 
-        //private void SetNewHouse(GeometryShape  polygon, Vector scale, double rot, Vector offset)
-        //{
-        //    // polygon.ScaleX(0.5);
-        //    // polygon.ScaleY(1.75);
-        //    // polygon.Rotate(30);
-
-        //    // polygon.Move(new Vector(2.5, -0.75));
-
-        //    polygon.ScaleX(scale.X);
-        //    polygon.ScaleY(scale.Y);
-        //    polygon.Rotate(rot);
-
-        //    polygon.Move(offset);
-
-        //    _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
-        //}
 
         private List<Vector2> GetVertex(List<Triangle> polygonTriangulation)
         {
@@ -244,7 +216,7 @@ namespace DemoFlowVisualization
                 {
                     Console.WriteLine(_vortexSystem.Time);
                     _counter = 0;
-                  
+
                     //   _vortexesFromMemory = new VortexesFromMemory(_vortexSystem);
                     var freeVortexes = _vortexesFromMemory.GetListOfFreeVortex();
                     var startIndex = ComputeVelocityWithShader(freeVortexes);
@@ -255,8 +227,8 @@ namespace DemoFlowVisualization
                     _vortexSystem.NextStepGPU();
                     CopyVortexInGPU();
                     Console.WriteLine("Len : " + _vortexStructArray.Length);
-                    
-                        
+
+
                 }
 
                 _counter++;
@@ -265,7 +237,7 @@ namespace DemoFlowVisualization
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             // Draw the particles - малювання частинок
-            SetMvpMatrix();
+            _mvp.SetMvpMatrix(_xCenter, _eyePos, _angle, (float)Width / Height);
             SetVisualShaders();
             _particleShader.Use();
             // _particleShader.SetVector4("Color", new Vector4(0.9f, 0.7f, 0, 0.8f));
@@ -433,7 +405,8 @@ namespace DemoFlowVisualization
 
         private void SetOpenGlParameters()
         {
-            GL.ClearColor(1, 1.0f, 1.0f, 1);
+            // GL.ClearColor(1, 1.0f, 1.0f, 1);
+            GL.ClearColor(0, 0.0f, 0.0f, 1);
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Blend);
             GL.PointSize(1.0f);
@@ -442,28 +415,9 @@ namespace DemoFlowVisualization
 
         private void SetVisualShaders()
         {
-            var model = _model.ConvertToMatrix4();
-            var view = _view.ConvertToMatrix4();
-            var projection = _proj.ConvertToMatrix4();
-
-            _particleShader.SetMatrix4("model", model);
-            _particleShader.SetMatrix4("view", view);
-            _particleShader.SetMatrix4("projection", projection);
-
-            _vortexShader.SetMatrix4("model", model);
-            _vortexShader.SetMatrix4("view", view);
-            _vortexShader.SetMatrix4("projection", projection);
-
-            _bodyShader.SetMatrix4("model", model);
-            _bodyShader.SetMatrix4("view", view);
-            _bodyShader.SetMatrix4("projection", projection);
-        }
-
-        private void SetMvpMatrix()
-        {
-            _view = glm.lookAt(new vec3(_xCenter, 0, _eyePos), new vec3(_xCenter, 0, 0), new vec3(0, 1, 0));
-            _model = glm.rotate(new mat4(1.0f), glm.radians(_angle), new vec3(1, 0.0f, 0.0f));
-            _proj = glm.perspective(glm.radians(60.0f), (float)Width / Height, 1.0f, 100.0f);
+            _particleShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
+            _vortexShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
+            _bodyShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
         }
 
         public void SetEye(float eyePos)

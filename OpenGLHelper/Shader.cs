@@ -156,6 +156,13 @@ namespace OpenGLHelper
             Handle.SetMatrix3(name, data);
         }
 
+        public void SetMvpMatrix(Matrix4 model, Matrix4 view, Matrix4 projection)
+        {
+            SetMatrix4("model", model);
+            SetMatrix4("view", view);
+            SetMatrix4("projection", projection);
+        }
+
         /// <summary>
         /// Set a uniform Vector3 on this shader.
         /// </summary>

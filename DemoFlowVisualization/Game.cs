@@ -21,7 +21,8 @@ namespace DemoFlowVisualization
         private VortexDynamic2D vd;
         private RectangleFlow rf;
 
-        public Game(int width, int height, string title) : base(width, height, GraphicsMode.Default, title)
+        public Game(int width, int height, string title) : 
+            base(width, height, GraphicsMode.Default, title)
         {
 
         }
@@ -30,14 +31,12 @@ namespace DemoFlowVisualization
         {
             // vd = new VortexDynamic2D(800,800);
             rf = new RectangleFlow(1024, 768);
-
             base.OnLoad(e);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-
-           //vd.ComputeAndDraw(_isPause, _is3D);
+            //vd.ComputeAndDraw(_isPause, _is3D);
             rf.ComputeAndDraw(_isPause, _is3D);
             rf.SetEye(_eyePos);
             rf.SetHorizontal(_xPosition);
@@ -49,6 +48,12 @@ namespace DemoFlowVisualization
 
 
         protected override void OnUpdateFrame(FrameEventArgs e)
+        {
+            GetInput();
+            base.OnUpdateFrame(e);
+        }
+
+        private void GetInput()
         {
             KeyboardState input = Keyboard.GetState();
 
@@ -64,18 +69,13 @@ namespace DemoFlowVisualization
 
             if (input.IsKeyDown(Key.Space))
             {
-
                 _isPause = true;
-
             }
 
             if (input.IsKeyDown(Key.C))
             {
-
                 _isPause = false;
-
             }
-
 
             if (input.IsKeyDown(Key.Number2))
             {
@@ -86,6 +86,7 @@ namespace DemoFlowVisualization
             {
                 _eyePos -= 0.1f;
             }
+
             if (input.IsKeyDown(Key.Up))
             {
                 _eyePos += 0.1f;
@@ -95,12 +96,11 @@ namespace DemoFlowVisualization
             {
                 _xPosition += 0.1f;
             }
+
             if (input.IsKeyDown(Key.Right))
             {
                 _xPosition -= 0.1f;
             }
-
-            base.OnUpdateFrame(e);
         }
 
         protected override void OnResize(EventArgs e)
