@@ -8,6 +8,6 @@ namespace DemoFlowVisualization
 {
     interface ISimulator
     {
-        void ComputeAndDraw(bool isPause, bool is3D);
+        void ComputeAndDraw(bool isPause, bool is3D, bool isDrawVortex);
     }
 }

@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK.Graphics.OpenGL4;
 
 namespace OpenGLHelper
 {
@@ -31,7 +30,7 @@ namespace OpenGLHelper
         {
             return _id;
         }
-        
+
         public void Destroy()
         {
             if (_id != 0)
@@ -56,6 +55,18 @@ namespace OpenGLHelper
             GL.DrawArrays(primitiveType, start, numberOfElements);
             Unbind();
 
+        }
+        
+        public static VertexArray GetVAO(StorageBuffer[] buffers, int[] ind, int[] num)
+        {
+            var vertexArray = new VertexArray();
+            for (int i = 0; i < buffers.Length; i++)
+            {
+                buffers[i].SetAttribPointer(ind[i], num[i]);
+            }
+
+            vertexArray.Unbind();
+            return vertexArray;
         }
     }
 }

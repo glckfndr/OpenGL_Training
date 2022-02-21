@@ -7,7 +7,7 @@ namespace OpenGLHelper
     {
         private readonly int _handle;
         private int _size;
-        private int _height;
+       // private int _height;
         private TextureUnit _unit;
 
         public void Use()

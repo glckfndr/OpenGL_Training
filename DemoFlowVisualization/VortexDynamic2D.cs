@@ -55,7 +55,8 @@ namespace DemoFlowVisualization
         private int Width;
 
         private Plane _plane;
-        
+        private float _xCenter;
+
 
         public VortexDynamic2D(int width, int height)
         {
@@ -122,12 +123,12 @@ namespace DemoFlowVisualization
             _clearTextureComputeShader = new Shader("../../Shaders/clearTexture.comp");
         }
 
-        public void ComputeAndDraw(bool isPause, bool is3D)
+        public void ComputeAndDraw(bool isPause, bool is3D, bool isDrawVortex)
         {
             if (!isPause)
             {
                 _time += _deltaTime;
-                if (_time % 0.1 <= _deltaTime)
+                    //  if (_time % 0.1 <= _deltaTime)
                     Console.WriteLine("Time: " + _time);
 
                 _clearTextureComputeShader.Compute(_textureWidth / 16, _textureHeight / 16, 1, MemoryBarrierFlags.ShaderImageAccessBarrierBit);
@@ -164,7 +165,7 @@ namespace DemoFlowVisualization
             if (is3D)
             {
                 SetVortexShader3D();
-                _velocityBuffer.SetAttribPointer(2, _vortexNumber);
+              //  _velocityBuffer.SetAttribPointer(2, _vortexNumber);
                 _vortexVAO.Draw(PrimitiveType.Points, 0, _vortexNumber);
             }
             else
@@ -209,6 +210,16 @@ namespace DemoFlowVisualization
             _renderShader.SetMatrix4("view", _view.ConvertToMatrix4());
             _renderShader.SetMatrix4("projection", proj.ConvertToMatrix4());
             _renderShader.SetMatrix3("NormalMatrix", norm.ConvertToMatrix3());
+        }
+
+        public void SetEye(float eyePos)
+        {
+            _eyePos = eyePos;
+        }
+
+        public void SetHorizontal(float xPosition)
+        {
+            _xCenter = xPosition;
         }
     }
 }

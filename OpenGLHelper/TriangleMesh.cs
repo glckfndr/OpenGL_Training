@@ -71,6 +71,7 @@ namespace OpenGLHelper
             _VAO.Bind();
             GL.DrawElements(PrimitiveType.Triangles, _numberOfVertices, DrawElementsType.UnsignedInt, 0);
             _VAO.Unbind();
+
         }
 
         public void DeleteBuffers()

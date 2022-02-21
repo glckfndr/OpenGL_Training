@@ -12,14 +12,15 @@ namespace DemoFlowVisualization
 
     public class Game : GameWindow
     {
-        private bool _is3D = false;
+        private bool _is3D = true;
         private bool _isPause = false;
 
         private float _eyePos = 7.0f;
         private float _xPosition = 1.0f;
         
-        private VortexDynamic2D vd;
-        private RectangleFlow rf;
+        private VortexDynamic2D _vortexDynamic2D;
+        private RectangleFlow _rectangleFlow;
+        private bool _isDrawVortex = true;
 
         public Game(int width, int height, string title) : 
             base(width, height, GraphicsMode.Default, title)
@@ -29,17 +30,20 @@ namespace DemoFlowVisualization
 
         protected override void OnLoad(EventArgs e)
         {
-            // vd = new VortexDynamic2D(800,800);
-            rf = new RectangleFlow(1024, 768);
+            _vortexDynamic2D = new VortexDynamic2D(800,800);
+            _rectangleFlow = new RectangleFlow(1024, 768);
             base.OnLoad(e);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            //vd.ComputeAndDraw(_isPause, _is3D);
-            rf.ComputeAndDraw(_isPause, _is3D);
-            rf.SetEye(_eyePos);
-            rf.SetHorizontal(_xPosition);
+            _vortexDynamic2D.ComputeAndDraw(_isPause, _is3D, _isDrawVortex);
+            _vortexDynamic2D.SetEye(_eyePos);
+            _vortexDynamic2D.SetHorizontal(_xPosition);
+
+            _rectangleFlow.ComputeAndDraw(_isPause, _is3D, _isDrawVortex);
+            //_rectangleFlow.SetEye(_eyePos);
+            //_rectangleFlow.SetHorizontal(_xPosition);
             Context.SwapBuffers();
             //Thread.Sleep(500);
             base.OnRenderFrame(e);
@@ -100,6 +104,16 @@ namespace DemoFlowVisualization
             if (input.IsKeyDown(Key.Right))
             {
                 _xPosition -= 0.1f;
+            }
+
+            if (input.IsKeyDown(Key.V))
+            {
+                _isDrawVortex = true;
+            }
+
+            if (input.IsKeyDown(Key.N))
+            {
+                _isDrawVortex = false;
             }
         }
 

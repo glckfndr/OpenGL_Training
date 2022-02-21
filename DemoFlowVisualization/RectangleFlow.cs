@@ -16,23 +16,31 @@ namespace DemoFlowVisualization
         private Shader _particleShader;
         private Shader _vortexShader;
         private Shader _bodyShader;
+        private Shader _velocityComputeShader;
 
-        private int _vortexNumber;
         private VortexSystem _vortexSystem;
         private VortexesFromMemory _vortexesFromMemory;
-        private StorageBuffer _particleBuf;
 
+        private StorageBuffer _particleBuf;
         private StorageBuffer _particleVelBuf;
         private StorageBuffer _lifeTimeBuf;
-
         private StorageBuffer _vortexBuf;
+        private StorageBuffer _startPos;
+        private StorageBuffer _bodyBufferObject;
+        private StorageBuffer _velocityBuffer;
+
+        private VertexArray _particleVAO;
+        private VertexArray _bodyVAO;
+        private VertexArray _vortexVAO;
+
         //private vec3 _nParticles = new vec3(128, 128, 1);
         private vec3 _nParticles = new vec3(32, 32, 16);
+
+        private int _maxNumberOfVortex = 1024 * 12;
         //private vec3 _nParticlesCircle = new vec3(128, 128, 1);
         private int _particleNumber;
         private Vector _flowVelovity = new Vector(1.0, 0.0);
-        private StorageBuffer _startPos;
-        private VertexArray _particleVAO;
+
         private MvpMatrix _mvp = new MvpMatrix();
         private float _eyePos = 10.0f;
         private float _angle = 0;
@@ -41,14 +49,8 @@ namespace DemoFlowVisualization
         private int _counter = 0;
         private VortexStruct[] _vortexStructArray = null;
         private float _xCenter = 1;
-        private VertexArray _vortexVAO;
         private Texture2D _texture;
         private List<Vector2> _bogyTriangles;
-        private StorageBuffer _bodyBufferObject;
-        private VertexArray _bodyVAO;
-        private StorageBuffer _velocityBuffer;
-        private Shader _velocityComputeShader;
-
 
         public RectangleFlow(int width, int height)
         {
@@ -56,7 +58,6 @@ namespace DemoFlowVisualization
             Width = width;
 
             SetGeometryAndVortexSystem();
-
             _particleNumber = (int)(_nParticles.x * _nParticles.y * _nParticles.z);
             SetOpenGlParameters();
             CreateShaders();
@@ -92,29 +93,54 @@ namespace DemoFlowVisualization
             GeometryShapeCollection shapeCollection = new GeometryShapeCollection();
 
             GeometryShape polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.5, 1.75), 30, new Vector(2.5, -0.75));
+            polygon.SetAll(new Vector(0.5, 1.75), 0, new Vector(2.0, -1));
             _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
             shapeCollection.AddShape(polygon);
 
             polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.6, 1.2), 0, new Vector(0, -0.75));
-            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
-            shapeCollection.AddShape(polygon);
-
-
-            polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.6, 1.2), 0, new Vector(0, 1.25));
+            polygon.SetAll(new Vector(0.6, 1.2), 0, new Vector(0, -1));
             _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
             shapeCollection.AddShape(polygon);
 
             polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.5, 1.0), 30, new Vector(2, 1.5));
+            polygon.SetAll(new Vector(0.6, 2), 0, new Vector(2, 3.9));
             _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
             shapeCollection.AddShape(polygon);
 
+            polygon = new GeometryShape(polygonPoints, true);
+            polygon.SetAll(new Vector(0.6, 1.2), 0, new Vector(0, 1.0));
+            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
+            shapeCollection.AddShape(polygon);
+
+            polygon = new GeometryShape(polygonPoints, true);
+            polygon.SetAll(new Vector(0.5, 1.0), 0, new Vector(2, 1.25));
+            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
+            shapeCollection.AddShape(polygon);
+
+            double offsetX = 4;
+            double offsetY = 2.5;
+            double angle = 90;
+            polygon = new GeometryShape(polygonPoints, true);
+            polygon.SetAll(new Vector(0.5, 1.75), angle, new Vector(2.5 + offsetX, -1 + offsetY));
+            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
+            shapeCollection.AddShape(polygon);
+
+            polygon = new GeometryShape(polygonPoints, true);
+            polygon.SetAll(new Vector(0.6, 1.2), angle, new Vector(0 + offsetX, -1 + offsetY));
+            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
+            shapeCollection.AddShape(polygon);
+
+            polygon = new GeometryShape(polygonPoints, true);
+            polygon.SetAll(new Vector(0.7, 1.2), angle, new Vector(0 + offsetX, 0.75 + offsetY));
+            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
+            shapeCollection.AddShape(polygon);
+
+            polygon = new GeometryShape(polygonPoints, true);
+            polygon.SetAll(new Vector(0.5, 1.2), angle, new Vector(2 + offsetX, 0.75 + offsetY));
+            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
+            shapeCollection.AddShape(polygon);
             return shapeCollection;
         }
-
 
         private List<Vector2> GetVertex(List<Triangle> polygonTriangulation)
         {
@@ -139,42 +165,25 @@ namespace DemoFlowVisualization
             // var particles = GetParticles(_nParticles).ToArray();
             var particles = GetParticlesInCircles(_nParticles).ToArray();
             _particleBuf = SetBufferData(particles, 0);
-            //_particleBuf = SetBufferData(GetV(_nParticles).ToArray(), 0);
 
-            // до 8 * 1024 вихорів
-            var nv = 8 * 1024;
-            var vrt = new VortexStruct[nv];
-            _vortexBuf = AllocateBufferData(vrt, 1);
-            var vel = new Vector2[nv];
+            var vortexStructs = new VortexStruct[_maxNumberOfVortex];
+            _vortexBuf = AllocateBufferData(vortexStructs, 1);
+            var vel = new Vector2[_maxNumberOfVortex];
             _velocityBuffer = AllocateBufferData(vel, 11);
 
             _particleVelBuf = SetBufferData(GetInitialVelocity(_nParticles).ToArray(), 2);
             _startPos = SetBufferData(particles, 3);
             _lifeTimeBuf = SetBufferData(GetLifeTime(_nParticles).ToArray(), 4);
             _bodyBufferObject = SetBufferData(_bogyTriangles.ToArray(), 6);
-
             // Set up the VAO
-            _particleVAO = SetVAO(new[] { _particleBuf, _particleVelBuf }, new[] { 0, 1 }, new[] { 4, 4 });
-            _vortexVAO = SetVAO(new[] { _vortexBuf }, new[] { 1 }, new[] { 4 });
-            _bodyVAO = SetVAO(new[] { _bodyBufferObject }, new[] { 6 }, new[] { 2 });
+            _particleVAO = VertexArray.GetVAO(new[] { _particleBuf, _particleVelBuf }, new[] { 0, 1 }, new[] { 4, 4 });
+            _vortexVAO = VertexArray.GetVAO(new[] { _vortexBuf }, new[] { 1 }, new[] { 4 });
+            _bodyVAO = VertexArray.GetVAO(new[] { _bodyBufferObject }, new[] { 6 }, new[] { 2 });
 
         }
-
-        private VertexArray SetVAO(StorageBuffer[] buffers, int[] ind, int[] num)
-        {
-            var vertexArray = new VertexArray();
-            for (int i = 0; i < buffers.Length; i++)
-            {
-                buffers[i].SetAttribPointer(ind[i], num[i]);
-            }
-
-            vertexArray.Unbind();
-            return vertexArray;
-        }
-
+        
         private StorageBuffer SetBufferData<T>(T[] data, int layoutShaderIndex) where T : struct
         {
-
             var buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
             buffer.SetData(data, layoutShaderIndex); // copy data on GPU
             return buffer;
@@ -193,11 +202,9 @@ namespace DemoFlowVisualization
             _particleComputeShader = new Shader("../../Shaders/particle.comp");
             // шейдер для розрахунку руху вихорів
             _velocityComputeShader = new Shader("../../Shaders/Velocity2D.comp");
-
             // шейдер для відображення частинок
             _particleShader = new Shader("../../Shaders/particles.vert",
                 "../../Shaders/particles.frag");
-
             // шейдер для відображення вихорів текстурами
             _vortexShader = new Shader("../../Shaders/vortexTex.vert",
                 "../../Shaders/vortexTex.frag");
@@ -206,9 +213,9 @@ namespace DemoFlowVisualization
                 "../../Shaders/body.frag");
         }
 
-        public void ComputeAndDraw(bool isPause, bool is3D)
+        public void ComputeAndDraw(bool isPause, bool is3D, bool isDrawVortex)
         {
-            if (_vortexStructArray.Length > 8200)
+            if (_vortexStructArray.Length > _maxNumberOfVortex)
                 isPause = true;
             if (!isPause)
             {
@@ -217,18 +224,12 @@ namespace DemoFlowVisualization
                     Console.WriteLine(_vortexSystem.Time);
                     _counter = 0;
 
-                    //   _vortexesFromMemory = new VortexesFromMemory(_vortexSystem);
-                    var freeVortexes = _vortexesFromMemory.GetListOfFreeVortex();
-                    var startIndex = ComputeVelocityWithShader(freeVortexes);
-                    SetVoretexVelocity(freeVortexes, startIndex);
-
+                    CalculateVortexVelocity();
                     // робимо крок по часу методом дискретних вихорів
                     //  _vortexSystem.NextStep();
                     _vortexSystem.NextStepGPU();
                     CopyVortexInGPU();
                     Console.WriteLine("Len : " + _vortexStructArray.Length);
-
-
                 }
 
                 _counter++;
@@ -236,7 +237,32 @@ namespace DemoFlowVisualization
             }
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            // Draw the particles - малювання частинок
+            //  малювання частинок
+            DrawParticleWithPoints();
+            // малювання вихорів текстурами
+            if (isDrawVortex)
+                DrawVortexWithTexture();
+            // малювання тіл
+            DrawBody();
+        }
+
+        private void CalculateVortexVelocity()
+        {
+            var freeVortexes = _vortexesFromMemory.GetListOfFreeVortex();
+            var startIndex = ComputeVelocityWithShader(freeVortexes);
+            SetVoretexVelocity(freeVortexes, startIndex);
+        }
+
+        private void DrawBody()
+        {
+            _bodyShader.Use();
+            _bodyVAO.Draw(PrimitiveType.Triangles, 0, _bogyTriangles.Count);
+            // GL.PointSize(8.0f);
+            // _bodyVAO.Draw(PrimitiveType.Points, 0, _bogyTriangles.Count * 3);
+        }
+
+        private void DrawParticleWithPoints()
+        {
             _mvp.SetMvpMatrix(_xCenter, _eyePos, _angle, (float)Width / Height);
             SetVisualShaders();
             _particleShader.Use();
@@ -244,22 +270,15 @@ namespace DemoFlowVisualization
             _particleShader.SetVector4("Color", new Vector4(0.0f, 0.0f, 0, 0.8f));
             GL.PointSize(2.0f);
             _particleVAO.Draw(PrimitiveType.Points, 0, (int)(_nParticles.x * _nParticles.y * _nParticles.z));
+        }
 
-
-            // малювання вихорів текстурами
-            //_vortexShader.Use();
-            //_vortexVAO.Bind();
-            //GL.VertexAttribDivisor(1, 1);
-            //GL.DrawArraysInstanced(PrimitiveType.Triangles, 0, 6, _vortexStructArray.Length);
-            //_vortexVAO.Unbind();
-
-            // малювання тіл
-            _bodyShader.Use();
-            _bodyVAO.Draw(PrimitiveType.Triangles, 0, _bogyTriangles.Count);
-            // GL.PointSize(8.0f);
-            // _bodyVAO.Draw(PrimitiveType.Points, 0, _bogyTriangles.Count * 3);
-
-
+        private void DrawVortexWithTexture()
+        {
+            _vortexShader.Use();
+            _vortexVAO.Bind();
+            GL.VertexAttribDivisor(1, 1);
+            GL.DrawArraysInstanced(PrimitiveType.Triangles, 0, 6, _vortexStructArray.Length);
+            _vortexVAO.Unbind();
         }
 
         private void CopyVortexInGPU()
@@ -301,7 +320,7 @@ namespace DemoFlowVisualization
             _velocityComputeShader.SetVector4("flowVelocity",
                 new Vector4((float)_flowVelovity.X, (float)_flowVelovity.Y, 0, 1));
 
-            _velocityComputeShader.Compute(1024 * 8 / 128, 1, 1);
+            _velocityComputeShader.Compute(_maxNumberOfVortex / 128, 1, 1);
             return startIndex;
         }
 
@@ -319,14 +338,12 @@ namespace DemoFlowVisualization
                 {
                     for (int j = 0; j < nParticles.y; j++)
                     {
-
                         var x = (float)(-L + 2 * L * rnd.NextDouble()) + shiftX;
                         var y = (float)(-thickness + 2 * thickness * rnd.NextDouble());
                         float z = 0.0f;
                         var w = 1.1f;
                         var p = new Vector4(x, y, z, w);
                         list.Add(p);
-
                     }
                 }
 
@@ -341,15 +358,13 @@ namespace DemoFlowVisualization
             for (int k = 0; k < nParticles.z; k++)
             {
                 float centerX = -1.8f + 0.2f * (float)rnd.NextDouble();
-                float centerY = -1.5f + 3 * (float)rnd.NextDouble(); ;
+                float centerY = -1.0f + 4 * (float)rnd.NextDouble(); ;
 
                 for (int i = 0; i < nParticles.x; i++)
                 {
                     for (int j = 0; j < nParticles.y; j++)
                     {
-
                         var phi = rnd.NextDouble() * 2.0 * Math.PI;
-
                         var r = R * rnd.NextDouble();
                         var x = (float)(r * Math.Cos(phi)) + centerX;
                         var y = (float)(r * Math.Sin(phi)) + centerY;
@@ -380,6 +395,7 @@ namespace DemoFlowVisualization
                         lst.Add(new Vector4(x, y, z, w));
                     }
                 }
+
             return lst;
         }
 
@@ -395,10 +411,10 @@ namespace DemoFlowVisualization
                     {
                         var x = 0.0f;
                         var y = (float)(5.5 + 20.0 * rnd.NextDouble());
-
                         lst.Add(new Vector2(x, y));
                     }
                 }
+
             return lst;
         }
 

@@ -10,8 +10,6 @@ using System.Collections.Generic;
 
 namespace ComputeShader2DVortex
 {
-
-
     public class Game : GameWindow
     {
 
@@ -67,7 +65,7 @@ namespace ComputeShader2DVortex
         protected override void OnLoad(EventArgs e)
         {
             _vortexNumber = (int)(_nParticles.x * _nParticles.y * _nParticles.z);
-            
+
             CreateShaders();
 
             _texture = new Texture2D(_width, _height, 0);
@@ -108,13 +106,13 @@ namespace ComputeShader2DVortex
                     Console.WriteLine("Vortex Number: " + _vortexNumber);
                     Console.WriteLine("Time: " + _time);
                 }
-                    
 
-                _clearTextureComputeShader.Compute( _width / 16, _height / 16, 1, MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+
+                _clearTextureComputeShader.Compute(_width / 16, _height / 16, 1, MemoryBarrierFlags.ShaderImageAccessBarrierBit);
 
                 //_velocityComputeShader.Use();
                 _velocityComputeShader.SetInt("vortexNumber", _vortexNumber);
-                
+
                 // Bind buffers to compute shader
                 //_vortexBuffer.Bind(0);
                 _vortexBuffer.BindLayout(0);
@@ -135,7 +133,7 @@ namespace ComputeShader2DVortex
 
                 _vortexBuffer.BindLayout(0);
                 _positionComputeShader.SetFloat("deltaTime", _deltaTime);
-                _positionComputeShader.Compute(_vortexNumber / 128, 1, 1, 
+                _positionComputeShader.Compute(_vortexNumber / 128, 1, 1,
                     MemoryBarrierFlags.ShaderStorageBarrierBit | MemoryBarrierFlags.ShaderImageAccessBarrierBit);
             }
             // Draw the scene
@@ -147,7 +145,7 @@ namespace ComputeShader2DVortex
 
                 _vortexShader.Use();
                 _vortexShader.SetVector4("Color", new Vector4(0.7f, 0.9f, 0.3f, 0.8f));
-                _velocityBuffer.SetAttribPointer(2, _vortexNumber);
+                
                 _vortexVAO.Draw(PrimitiveType.Points, 0, _vortexNumber);
             }
             else
@@ -266,7 +264,7 @@ namespace ComputeShader2DVortex
 
         private void SetShaderMatrices()
         {
-            _view = glm.lookAt(new vec3(0, 0, _eyePos), 
+            _view = glm.lookAt(new vec3(0, 0, _eyePos),
                 new vec3(0, 0, 0), new vec3(0, 1, 0));
             _model = new mat4(1.0f);
 
