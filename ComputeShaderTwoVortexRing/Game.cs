@@ -19,7 +19,7 @@ namespace ComputeShaderTwoVortexRing
         private Shader _computeShader;
         private vec3 nParticles = new vec3(16, 128, 48);
         private int totalParticles;
-        private int _ringPointsNumber = 180;
+        //private int _ringPointsNumber = 180;
 
 
 
@@ -30,8 +30,9 @@ namespace ComputeShaderTwoVortexRing
         private StorageBuffer _ring1Buffer;
         private StorageBuffer _ring2Buffer;
 
-        private VortexCurve _ring1;
-        private VortexCurve _ring2;
+        //private VortexCurve _ring1;
+        //private VortexCurve _ring2;
+        private RingModel _ringModel;
 
         //private float _gamma = 0.1f;
 
@@ -56,8 +57,8 @@ namespace ComputeShaderTwoVortexRing
         private float _yLookCenter = 0.0f;
         private float _xEyePos = 2.0f;
 
-        private double _ring1Radius = 0.6;
-        private double _ring2Radius = 0.5;
+        //private double _ring1Radius = 0.6;
+        //private double _ring2Radius = 0.5;
         private float _ringAlpha = 1;
 
         private Torus _torus2;
@@ -69,9 +70,12 @@ namespace ComputeShaderTwoVortexRing
 
         protected override void OnLoad(EventArgs e)
         {
+            
+            //_ring1 = new VortexCurve(-0.4, _ringPointsNumber, _ring1Radius, -0.1);
+            //_ring2 = new VortexCurve(0.4, _ringPointsNumber, _ring2Radius, 0.0);
+            _ringModel = new RingModel();
+
             _view = glm.lookAt(new vec3(_xEyePos, _yEyePos, 0), new vec3(0, _yLookCenter, 0), new vec3(0, 1, 0));
-            _ring1 = new VortexCurve(-0.4, _ringPointsNumber, _ring1Radius, -0.1);
-            _ring2 = new VortexCurve(0.4, _ringPointsNumber, _ring2Radius, 0.0);
             _model = new mat4(1.0f);
             GL.Enable(EnableCap.DepthTest);
             totalParticles = (int)(nParticles.x * nParticles.y * nParticles.z);
@@ -92,7 +96,8 @@ namespace ComputeShaderTwoVortexRing
             _vortexShader = new Shader("../../Shaders/vortex.vert", "../../Shaders/vortex.frag");
 
             _computeShader = new Shader("../../Shaders/twoRing.comp");
-            _computeShader.SetInt("ringPointsNumber", _ringPointsNumber + 1);
+            //_computeShader.SetInt("ringPointsNumber", _ringPointsNumber + 1);
+            _computeShader.SetInt("ringPointsNumber", _ringModel.GetPointNumber() + 1);
             //  _computeShader.SetFloat("ring1Radius",(float) _ring1Radius);
             //  _computeShader.SetFloat("ring2Radius", (float)_ring2Radius);
             //_computeShader.SetFloat("gamma", _gamma);
@@ -169,8 +174,9 @@ namespace ComputeShaderTwoVortexRing
             // Execute the compute shader
             //Stopwatch stp = new Stopwatch();
             //stp.Start();
-            _ring1.InVelocity(_ring2);
-            _ring2.InVelocity(_ring1);
+            //_ring1.InVelocity(_ring2);
+            //_ring2.InVelocity(_ring1);
+            _ringModel.InnerVelocity();
             //var task1 = new Task(() => { _ring1.InVelocity(_ring2); });
             //var task2 = new Task(() => { _ring2.InVelocity(_ring1); });
 
@@ -180,14 +186,17 @@ namespace ComputeShaderTwoVortexRing
 
             //task1.Wait();
             //task2.Wait();
-            _ring1.SetSubStep();
-            _ring2.SetSubStep();
+            //_ring1.SetSubStep();
+            //_ring2.SetSubStep();
+            _ringModel.SetSubStep();
 
-            _ring1.InVelocitySubStep(_ring2);
-            _ring2.InVelocitySubStep(_ring1);
+            //_ring1.InVelocitySubStep(_ring2);
+            //_ring2.InVelocitySubStep(_ring1);
+            _ringModel.InnerVelocitySubStep();
 
-            _ring1.MoveStep();
-            _ring2.MoveStep();
+            //_ring1.MoveStep();
+            //_ring2.MoveStep();
+            _ringModel.MoveStep();
             //stp.Stop();
             //Console.WriteLine("Time : " + stp.ElapsedMilliseconds);
 
@@ -197,17 +206,21 @@ namespace ComputeShaderTwoVortexRing
             _particlePositionBuffer.BindLayout(0);
             _particleVelocityBuffer.BindLayout(1);
 
-            _ring1Buffer.SubData(_ring1.ToVortexPointArray(), 2);
-            _ring2Buffer.SubData(_ring2.ToVortexPointArray(), 3);
+            //_ring1Buffer.SubData(_ring1.ToVortexPointArray(), 2);
+            _ring1Buffer.SubData(_ringModel.GetRingVortexPoints(1), 2);
+
+            //_ring2Buffer.SubData(_ring2.ToVortexPointArray(), 3);
+            _ring2Buffer.SubData(_ringModel.GetRingVortexPoints(2), 3);
 
 
             _initialParticlePositionBuffer.BindLayout(4);
 
-            _computeShader.SetInt("ringPointsNumber", _ringPointsNumber);
+            //_computeShader.SetInt("ringPointsNumber", _ringPointsNumber);
+            _computeShader.SetInt("ringPointsNumber", _ringModel.GetPointNumber());
             // _computeShader.SetFloat("gamma", _gamma);
 
             //for (int k = 0; k < 1; k++)
-                _computeShader.Compute(totalParticles / 64, 1, 1, 
+            _computeShader.Compute(totalParticles / 64, 1, 1, 
                     MemoryBarrierFlags.ShaderStorageBarrierBit);
 
             // Draw the scene
@@ -239,14 +252,20 @@ namespace ComputeShaderTwoVortexRing
             //_adsShader.SetFloat("Shininess", 30.0f);
 
             _adsShader.SetVector3("Kd", new Vector3(0.95f, 0.95f, 2.0f));
-            _torus1 = new Torus((float)_ring1.GetRadius(), 0.005f, 18, 72);
+            // _torus1 = new Torus((float)_ring1.GetRadius(), 0.005f, 18, 72);
+            //_torus1 = new Torus((float)_ring1.GetRadius(), 0.005f, 18, 72);
+            //_torus1 = new Torus((float)_ring1.GetRadius(), 0.005f, 18, 72);
+            _torus1 = new Torus(_ringModel.GetRingRadius(1), 0.005f, 18, 72);
 
-            SetThorusPosition(_ring1);
+            //SetThorusPosition(_ring1);
+            SetThorusPosition(_ringModel.GetRing(1));
             _torus1.Render();
 
             _adsShader.SetVector3("Kd", new Vector3(0.95f, 0.0f, 0.50f));
-            _torus2 = new Torus((float)_ring2.GetRadius(), 0.005f, 18, 72);
-            SetThorusPosition(_ring2);
+            //_torus2 = new Torus((float)_ring2.GetRadius(), 0.005f, 18, 72);
+            _torus2 = new Torus(_ringModel.GetRingRadius(2), 0.005f, 18, 72);
+            //SetThorusPosition(_ring2);
+            SetThorusPosition(_ringModel.GetRing(2));
             _torus2.Render();
 
 
@@ -264,7 +283,10 @@ namespace ComputeShaderTwoVortexRing
             // The _buffers for positions
             // List<float> initialPosition = InitialPosition.InCircle(nParticles,_ring1Radius,0.0);
             //  List<float> initialPosition = InitialPosition.InCylinderOrdered(nParticles, _ring1Radius, -0.15);
-            List<float> initialPosition = InitialPosition.InTwoCylinderOrdered(nParticles, _ring1Radius, _ring2Radius , -0.15, -0.05);
+            //List<float> initialPosition = InitialPosition.InTwoCylinderOrdered(nParticles, _ring1Radius, _ring2Radius , -0.15, -0.05);
+            List<float> initialPosition = InitialPosition.InTwoCylinderOrdered(nParticles, 
+                _ringModel.GetRingRadius(1), _ringModel.GetRingRadius(2), 
+                -0.15, -0.05);
 
             //  List<float> initialPosition = InitialPosition.InTwoCircle(nParticles,_ring1Radius, -0.1, 0);
             //List<float> initialPosition = InitialPosition.InTwoRing(nParticles, _ring1Radius, _ring2Radius, -0.1, 0);
@@ -279,11 +301,13 @@ namespace ComputeShaderTwoVortexRing
 
             //_ring1Position = GetVortexRing(_ringPointsNumber, (float)_ringRadius1);
             _ring1Buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
-            _ring1Buffer.SetData(_ring1.ToVortexPointArray(), 2);
+            //_ring1Buffer.SetData(_ring1.ToVortexPointArray(), 2);
+            _ring1Buffer.SetData(_ringModel.GetRingVortexPoints(1), 2);
 
             // _ring2Buffer = GetVortexRing(_ringPointsNumber, (float)_ring2Radius, 1.0f);
             _ring2Buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
-            _ring2Buffer.SetData(_ring2.ToVortexPointArray(), 3);
+            //_ring2Buffer.SetData(_ring2.ToVortexPointArray(), 3);
+            _ring2Buffer.SetData(_ringModel.GetRingVortexPoints(2), 3);
 
             _initialParticlePositionBuffer = new StorageBuffer(BufferUsageHint.StaticDraw);
             _initialParticlePositionBuffer.SetData(initialPosition.ToArray(), 4);

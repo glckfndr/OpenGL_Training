@@ -54,6 +54,7 @@
     <Compile Include="InitialPosition.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RingModel.cs" />
     <Compile Include="Vector3D.cs" />
     <Compile Include="VortexCurve.cs" />
     <Compile Include="VortexPoint.cs" />

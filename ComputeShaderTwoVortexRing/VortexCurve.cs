@@ -41,7 +41,7 @@ namespace ComputeShaderTwoVortexRing
 
         }
 
-        public Vector3D Velocity(Vector3D r)
+        private Vector3D Velocity(Vector3D r)
         {
             var velocity = new Vector3D(0);
 
@@ -68,7 +68,7 @@ namespace ComputeShaderTwoVortexRing
         //}
 
 
-        public Vector3D VelocitySubStep(Vector3D r)
+        private Vector3D VelocitySubStep(Vector3D r)
         {
             var velocity = new Vector3D(0);
 
@@ -84,44 +84,35 @@ namespace ComputeShaderTwoVortexRing
         /// 
         /// </summary>
         /// <param name="vortexCurve"></param>
-        public void InVelocity(params VortexCurve[] vortexCurve)
+        public void InVelocity(VortexCurve[] vortexCurve)
         {
             //for (int i = 0; i < _points.Length; i++)
             Parallel.For(0, _points.Length, i =>
             {
 
                 _velocity[i] = new Vector3D(0);
-                _velocity[i] += Velocity(_points[i]);
+                // _velocity[i] += Velocity(_points[i]);
 
                 foreach (var curve in vortexCurve)
                 {
                     _velocity[i] += curve.Velocity(_points[i]);
                 }
-
-
             });
-
-
         }
 
-
-        public void InVelocitySubStep(params VortexCurve[] vortexCurve)
+        public void InVelocitySubStep(VortexCurve[] vortexCurve)
         {
             //for (int i = 0; i < _pointsHalfStep.Length; i++)
             Parallel.For(0, _points.Length, i =>
             {
-
                 _velocity[i] = new Vector3D(0);
-                _velocity[i] += VelocitySubStep(_pointsHalfStep[i]); // швидкість від свого кільця
+                //  _velocity[i] += VelocitySubStep(_pointsHalfStep[i]); // швидкість від свого кільця
 
                 foreach (var curve in vortexCurve) // швидкість від інших кілець
                 {
                     _velocity[i] += curve.VelocitySubStep(_pointsHalfStep[i]);
                 }
-
-
             });
-
         }
 
 
