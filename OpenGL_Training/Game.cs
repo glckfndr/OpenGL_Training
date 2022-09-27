@@ -93,7 +93,35 @@ namespace OpenGL_Training
             
             base.OnLoad(e);
         }
-        
+
+        protected override void OnRenderFrame(FrameEventArgs e)
+        {
+            GL.Clear(ClearBufferMask.ColorBufferBit);
+
+            _shader.Use();
+            _angle += 0.1f;
+
+            _rotation = Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(_angle));
+            _shader.SetMatrix4("RotationMatrix", _rotation);
+
+            //GL.BindVertexArray(_vertexArrayObject[0]);
+            _vertexArrayObject.Bind();
+            switch (_type)
+            {
+                case "t":
+                    GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+
+                    break;
+                case "r":
+                    GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+                    break;
+            }
+
+
+
+            Context.SwapBuffers();
+            base.OnRenderFrame(e);
+        }
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             KeyboardState input = Keyboard.GetState();
@@ -116,34 +144,7 @@ namespace OpenGL_Training
             base.OnUpdateFrame(e);
         }
 
-        protected override void OnRenderFrame(FrameEventArgs e)
-        {
-            GL.Clear(ClearBufferMask.ColorBufferBit);
-
-            _shader.Use();
-            _angle += 0.1f;
-
-            _rotation = Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(_angle));
-            _shader.SetMatrix4("RotationMatrix", _rotation);
-            
-            //GL.BindVertexArray(_vertexArrayObject[0]);
-            _vertexArrayObject.Bind();
-            switch (_type)
-            {
-                case "t":
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
-                    
-                    break;
-                case "r":
-                    GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
-                    break;
-            }
-            
-            
-
-            Context.SwapBuffers();
-            base.OnRenderFrame(e);
-        }
+        
 
         protected override void OnResize(EventArgs e)
         {

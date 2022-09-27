@@ -13,10 +13,11 @@ namespace ComputeShaderTwoVortexRing
         private Vector3D[] _velocity;
         private double _gamma;
         // крок по часу
-        private double _dt = 0.001;
+        private readonly double _dt;
 
-        public VortexCurve(double gamma, int n, double radius, double y)
+        public VortexCurve(double dt,double gamma, int n, double radius, double y)
         {
+            _dt = dt;
             _gamma = gamma;
             Ring(radius, n, y);
 

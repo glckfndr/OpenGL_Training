@@ -164,17 +164,17 @@ namespace DemoFlowVisualization
             _texture.Use();
             // var particles = GetParticles(_nParticles).ToArray();
             var particles = GetParticlesInCircles(_nParticles).ToArray();
-            _particleBuf = SetBufferData(particles, 0);
+            _particleBuf = StorageBuffer.SetBufferData(particles, 0);
 
             var vortexStructs = new VortexStruct[_maxNumberOfVortex];
-            _vortexBuf = AllocateBufferData(vortexStructs, 1);
+            _vortexBuf = StorageBuffer.AllocateBufferData(vortexStructs, 1);
             var vel = new Vector2[_maxNumberOfVortex];
-            _velocityBuffer = AllocateBufferData(vel, 11);
+            _velocityBuffer = StorageBuffer.AllocateBufferData(vel, 11);
 
-            _particleVelBuf = SetBufferData(GetInitialVelocity(_nParticles).ToArray(), 2);
-            _startPos = SetBufferData(particles, 3);
-            _lifeTimeBuf = SetBufferData(GetLifeTime(_nParticles).ToArray(), 4);
-            _bodyBufferObject = SetBufferData(_bogyTriangles.ToArray(), 6);
+            _particleVelBuf = StorageBuffer.SetBufferData(GetInitialVelocity(_nParticles).ToArray(), 2);
+            _startPos = StorageBuffer.SetBufferData(particles, 3);
+            _lifeTimeBuf = StorageBuffer.SetBufferData(GetLifeTime(_nParticles).ToArray(), 4);
+            _bodyBufferObject = StorageBuffer.SetBufferData(_bogyTriangles.ToArray(), 6);
             // Set up the VAO
             _particleVAO = VertexArray.GetVAO(new[] { _particleBuf, _particleVelBuf }, new[] { 0, 1 }, new[] { 4, 4 });
             _vortexVAO = VertexArray.GetVAO(new[] { _vortexBuf }, new[] { 1 }, new[] { 4 });
@@ -182,19 +182,19 @@ namespace DemoFlowVisualization
 
         }
         
-        private StorageBuffer SetBufferData<T>(T[] data, int layoutShaderIndex) where T : struct
-        {
-            var buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
-            buffer.SetData(data, layoutShaderIndex); // copy data on GPU
-            return buffer;
-        }
+        //private StorageBuffer SetBufferData<T>(T[] data, int layoutShaderIndex) where T : struct
+        //{
+        //    var buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
+        //    buffer.SetData(data, layoutShaderIndex); // copy data on GPU
+        //    return buffer;
+        //}
 
-        private StorageBuffer AllocateBufferData<T>(T[] data, int layoutShaderIndex) where T : struct
-        {
-            var buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
-            buffer.Allocate(data, layoutShaderIndex); // allocate  data  on GPU
-            return buffer;
-        }
+        //private StorageBuffer AllocateBufferData<T>(T[] data, int layoutShaderIndex) where T : struct
+        //{
+        //    var buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
+        //    buffer.Allocate(data, layoutShaderIndex); // allocate  data  on GPU
+        //    return buffer;
+        //}
 
         private void CreateShaders()
         {

@@ -1,9 +1,8 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK;
+using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Runtime.InteropServices;
 using System.Windows;
-using OpenTK;
-using Buffer = System.Buffer;
 
 namespace OpenGLHelper
 {
@@ -13,6 +12,7 @@ namespace OpenGLHelper
         private int _arraySize;
         private BufferUsageHint _usage;
         private int _layoutShaderIndex;
+        public int LayoutShaderIndex => _layoutShaderIndex;
 
         public StorageBuffer(BufferUsageHint usage)
         {
@@ -29,16 +29,16 @@ namespace OpenGLHelper
         {
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, _id);
         }
-        
-        public void SetAttribPointer(int layoutShaderIndex, int numberOfComponent, int stride = 0, 
-                                     int offset = 0, bool normalized = false, 
+
+        public void SetAttribPointer(int layoutShaderIndex, int numberOfComponent, int stride = 0,
+                                     int offset = 0, bool normalized = false,
                                      VertexAttribPointerType type = VertexAttribPointerType.Float)
         {
             GL.BindBuffer(BufferTarget.ArrayBuffer, _id);
             GL.VertexAttribPointer(layoutShaderIndex, numberOfComponent, type, normalized, stride, offset);
             GL.EnableVertexAttribArray(layoutShaderIndex);
         }
-        
+
         public void SetData<T>(T[] data, int layoutShaderIndex) where T : struct
         {
             _arraySize = data.Length;
@@ -47,13 +47,13 @@ namespace OpenGLHelper
             //GL.BufferData(BufferTarget.ShaderStorageBuffer, Buffer.ByteLength(data), data, _usage);
             GL.BufferData(BufferTarget.ShaderStorageBuffer, _arraySize * Marshal.SizeOf(data[0]), data, _usage);
         }
-        
+
         public void SubData<T>(T[] data, int layoutShaderIndex) where T : struct
         {
             _arraySize = data.Length;
             BindLayout(layoutShaderIndex);
             //GL.BufferData(BufferTarget.ShaderStorageBuffer, Buffer.ByteLength(data), data, _usage);
-            GL.BufferSubData(BufferTarget.ShaderStorageBuffer,IntPtr.Zero , _arraySize * Marshal.SizeOf(data[0]), data);
+            GL.BufferSubData(BufferTarget.ShaderStorageBuffer, IntPtr.Zero, _arraySize * Marshal.SizeOf(data[0]), data);
         }
 
         public void SubData<T>(T[] data) where T : struct
@@ -119,7 +119,7 @@ namespace OpenGLHelper
             unsafe
             {
                 var data = (float*)GL.MapBuffer(BufferTarget.ShaderStorageBuffer, BufferAccess.ReadOnly);
-                
+
 
                 fixed (float* pointer = array) // Obtain a pointer to the output buffer data
                 {
@@ -217,6 +217,20 @@ namespace OpenGLHelper
                 GL.UnmapBuffer(BufferTarget.ShaderStorageBuffer);
             }
             return array;
+        }
+
+        public static StorageBuffer SetBufferData<T>(T[] data, int layoutShaderIndex) where T : struct
+        {
+            var buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
+            buffer.SetData(data, layoutShaderIndex); // copy data on GPU
+            return buffer;
+        }
+
+        public static StorageBuffer AllocateBufferData<T>(T[] data, int layoutShaderIndex) where T : struct
+        {
+            var buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
+            buffer.Allocate(data, layoutShaderIndex); // allocate  data  on GPU
+            return buffer;
         }
 
     }

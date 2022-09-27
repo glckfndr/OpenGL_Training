@@ -59,6 +59,8 @@ namespace OpenGLHelper
         
         public static VertexArray GetVAO(StorageBuffer[] buffers, int[] ind, int[] num)
         {
+            // кількість елементів в структурі, якщо вони однкаклві для Vector2 це 2
+            // Vector3 три 
             var vertexArray = new VertexArray();
             for (int i = 0; i < buffers.Length; i++)
             {

@@ -78,6 +78,9 @@ namespace OpenGLHelper
             InitializeBuffers(el, p, n, tex);
         }
 
+
+
+
         public VertexArray GetVao()
         {
             return _VAO;
