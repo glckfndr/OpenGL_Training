@@ -11,6 +11,6 @@ uniform mat4 projection;
 void main()
 {
 	vec4 position = vec4(VortexPosition.xy,0,1);
-    abs_velocity = length(position.xy);
+    abs_velocity = length(position.xy); // for color of particles
     gl_Position =  projection * view * model *  position ;
 }

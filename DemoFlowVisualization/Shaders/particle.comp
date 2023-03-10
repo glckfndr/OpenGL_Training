@@ -1,6 +1,6 @@
 ﻿#version 430
 layout(local_size_x = 128) in;
-layout(std430, binding = 0) buffer ParticlesPosition
+layout(std430, binding = 0) buffer particlePositionBuf
 {
   vec4 particlePosition[];
 };
@@ -12,22 +12,22 @@ struct Vortex
 		float rankinRadius;
 };
 
-layout(std430, binding = 1) buffer VortexData 
+layout(std430, binding = 1) buffer vortexBuf 
 {
   Vortex vortex[];
 };
 
-layout(std430, binding = 2) buffer ParticleVelocity
+layout(std430, binding = 2) buffer particleVelBuf
 {
-  vec4 pVelocity[];
+  vec4 particleVel[];
 };
 
-layout(std430, binding = 3) buffer StartPos
+layout(std430, binding = 3) buffer startPosBuf
 {
-  vec4 start[];
+  vec4 startPos[];
 };
 
-layout(std430, binding = 4) buffer LifeTime
+layout(std430, binding = 4) buffer lifeTimeBuf
 {
   vec2 lifeTime[];
 };
@@ -77,18 +77,19 @@ void main()
   lifeTime[index].x += deltaTime;
   
   if(lifeTime[index].x > lifeTime[index].y)
-  {
-	particlePosition[index].xy = start[index].xy;
+  { // when particle die move it at the initial position
+	particlePosition[index].xy = startPos[index].xy;
 	lifeTime[index].x = 0.0;
-	pVelocity[index].xy = vec2(start[index].y + 1.5,0)/2;//vec2(0,0);
+	// particle color depends on its position
+	particleVel[index].xy = vec2(0);
   }
   else
-  {
-		//pVelocity[index].xy = velocity;
+  { // new particle position
+		particleVel[index].xy = velocity;
 		//pVelocity[index].xy = vec2(pos.y,0); 
 		particlePosition[index].xy = pos;
   }
-	
-	pVelocity[index].z = lifeTime[index].x/lifeTime[index].y;
+	// coefficient for alpha index in particle.frag
+	particleVel[index].z = 1.0 - lifeTime[index].x/lifeTime[index].y;
 
 }

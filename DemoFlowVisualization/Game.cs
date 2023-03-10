@@ -30,20 +30,19 @@ namespace DemoFlowVisualization
 
         protected override void OnLoad(EventArgs e)
         {
-           // _vortexDynamic2D = new VortexDynamic2D(800,800);
+         //   _vortexDynamic2D = new VortexDynamic2D(800,800);
             _rectangleFlow = new RectangleFlow(1024, 768);
             base.OnLoad(e);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-           // _vortexDynamic2D.ComputeAndDraw(_isPause, _is3D, _isDrawVortex);
-           // _vortexDynamic2D.SetEye(_eyePos);
-           // _vortexDynamic2D.SetHorizontal(_xPosition);
+          //  _vortexDynamic2D.ComputeAndDraw(_isPause, _is3D, _isDrawVortex);
+          //  _vortexDynamic2D.SetEye(_eyePos);
+          //  _vortexDynamic2D.SetHorizontal(_xPosition);
 
             _rectangleFlow.ComputeAndDraw(_isPause, _is3D, _isDrawVortex);
-            _rectangleFlow.SetEye(_eyePos);
-            _rectangleFlow.SetHorizontal(_xPosition);
+            _rectangleFlow.SetViewPoint(_xPosition, _eyePos);
             Context.SwapBuffers();
             //Thread.Sleep(500);
             base.OnRenderFrame(e);

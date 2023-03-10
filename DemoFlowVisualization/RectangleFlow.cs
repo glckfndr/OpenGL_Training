@@ -21,13 +21,13 @@ namespace DemoFlowVisualization
         private VortexSystem _vortexSystem;
         private VortexesFromMemory _vortexesFromMemory;
 
-        private StorageBuffer _particleBuf;
+        private StorageBuffer _particlePositionBuf;
         private StorageBuffer _particleVelBuf;
         private StorageBuffer _lifeTimeBuf;
         private StorageBuffer _vortexBuf;
-        private StorageBuffer _startPos;
-        private StorageBuffer _bodyBufferObject;
-        private StorageBuffer _velocityBuffer;
+        private StorageBuffer _startPosBuf;
+        private StorageBuffer _bodyPositionBuf;
+        private StorageBuffer _velocityVortexBuffer;
 
         private VertexArray _particleVAO;
         private VertexArray _bodyVAO;
@@ -91,9 +91,9 @@ namespace DemoFlowVisualization
 
             var shapes = new List<(Vector scale, Vector offset, double angle)>() {
                 (new Vector(0.5, 1.75), new Vector(2.0, -1), 0),
-                (new Vector(0.6, 1.2), new Vector(0, -1), 0),
+              //  (new Vector(0.6, 1.2), new Vector(0, -1), 0),
                 (new Vector(0.6, 2), new Vector(2, 3.9), 0),
-                (new Vector(0.6, 1.2), new Vector(0, 1.0), 0),
+              //  (new Vector(0.6, 1.2), new Vector(0, 1.0), 0),
                 (new Vector(0.5, 1.0), new Vector(2, 1.25), 0)
 
             };
@@ -108,7 +108,6 @@ namespace DemoFlowVisualization
                 shapeCollection.AddShape(plg);
             }
 
-
             double offsetX = 4;
             double offsetY = 2.5;
             double angle = 90;
@@ -119,12 +118,12 @@ namespace DemoFlowVisualization
                 (new Vector(0.5, 1.2), new Vector(2 + offsetX, 0.75 + offsetY), angle)                
             };
 
-            for (var i = 0; i < shapes.Count; i++)
-            {
-                var plg = CreateRectangle(polygonPoints, shapes[i]);
-                _bogyTriangles.AddRange(GetVertex(plg.Triangulation));
-                shapeCollection.AddShape(plg);
-            }
+            //for (var i = 0; i < shapes.Count; i++)
+            //{
+            //    var plg = CreateRectangle(polygonPoints, shapes[i]);
+            //    _bogyTriangles.AddRange(GetVertex(plg.Triangulation));
+            //    shapeCollection.AddShape(plg);
+            //}
             
             return shapeCollection;
         }
@@ -156,25 +155,25 @@ namespace DemoFlowVisualization
             const string texName = "../../Textures/bubble.png";
             _texture = new Texture2D(texName, TextureWrapMode.Repeat);
             _texture.Use();
-            // var particles = GetParticles(_nParticles).ToArray();
-            var particles = GetParticlesInCircles(_nParticles).ToArray();
-            _particleBuf = StorageBuffer.SetBufferData(particles, 0);
+             var particles = GetParticles(_nParticles).ToArray();
+           // var particles = GetParticlesInCircles(_nParticles).ToArray();
+            _particlePositionBuf = StorageBuffer.SetBufferData(particles, 0); // layout 0 in particle.comp, particle.vert
 
             var vortexStructs = new VortexStruct[_maxNumberOfVortex];
-            _vortexBuf = StorageBuffer.AllocateBufferData(vortexStructs, 1);
+            _vortexBuf = StorageBuffer.AllocateBufferData(vortexStructs, 1); // layout 1 in particle.comp, Velocity2D.comp
             var vel = new Vector2[_maxNumberOfVortex];
-            _velocityBuffer = StorageBuffer.AllocateBufferData(vel, 11);
+            _velocityVortexBuffer = StorageBuffer.AllocateBufferData(vel, 11); // layout 11 in Velocity2D.comp
 
-            _particleVelBuf = StorageBuffer.SetBufferData(GetInitialVelocity(_nParticles).ToArray(), 2);
-            _startPos = StorageBuffer.SetBufferData(particles, 3);
-            _lifeTimeBuf = StorageBuffer.SetBufferData(GetLifeTime(_nParticles).ToArray(), 4);
-            _bodyBufferObject = StorageBuffer.SetBufferData(_bogyTriangles.ToArray(), 6);
+            _particleVelBuf = StorageBuffer.SetBufferData(GetInitialVelocity(_nParticles).ToArray(), 2); // layout 2 in particle.comp, particle.vert
+            _startPosBuf = StorageBuffer.SetBufferData(particles, 3); // layout 3 in particle.comp
+            _lifeTimeBuf = StorageBuffer.SetBufferData(GetLifeTime(_nParticles).ToArray(), 4); // layout 4 in particle.comp
+            _bodyPositionBuf = StorageBuffer.SetBufferData(_bogyTriangles.ToArray(), 6); // layout 6 in body.vert
             // Set up the VAO
-            _particleVAO = VertexArray.GetVAO(new[] { _particleBuf, _particleVelBuf },
-                                                new[] { _particleBuf.LayoutShaderIndex, _particleVelBuf.LayoutShaderIndex },
+            _particleVAO = VertexArray.GetVAO(new[] { _particlePositionBuf, _particleVelBuf },
+                                                new[] { _particlePositionBuf.LayoutShaderIndex, _particleVelBuf.LayoutShaderIndex },
                                                 new[] { 4, 4 });
             _vortexVAO = VertexArray.GetVAO(new[] { _vortexBuf }, new[] { _vortexBuf.LayoutShaderIndex }, new[] { 4 });
-            _bodyVAO = VertexArray.GetVAO(new[] { _bodyBufferObject }, new[] { _bodyBufferObject.LayoutShaderIndex }, new[] { 2 });
+            _bodyVAO = VertexArray.GetVAO(new[] { _bodyPositionBuf }, new[] { _bodyPositionBuf.LayoutShaderIndex }, new[] { 2 });
 
         }
 
@@ -233,6 +232,7 @@ namespace DemoFlowVisualization
             }
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            
             //  малювання частинок
             DrawParticleWithPoints();
             // малювання вихорів текстурами
@@ -251,26 +251,27 @@ namespace DemoFlowVisualization
 
         private void DrawBody()
         {
+            _bodyShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
             _bodyShader.Use();
             _bodyVAO.Draw(PrimitiveType.Triangles, 0, _bogyTriangles.Count);
             // GL.PointSize(8.0f);
-            // _bodyVAO.Draw(PrimitiveType.Points, 0, _bogyTriangles.Count * 3);
+            // _bodyVAO.Draw(PrimitiveType.Points, 0, _bogyTriangles.Count);
         }
 
         private void DrawParticleWithPoints()
-        {
-            _mvp.SetMvpMatrix(_xCenter, _eyePos, _angle, (float)Width / Height);
-            SetVisualShaders();
+        {            
             _particleShader.Use();
-            // _particleShader.SetVector4("Color", new Vector4(0.9f, 0.7f, 0, 0.8f));
-            _particleShader.SetVector4("Color", new Vector4(0.0f, 0.0f, 0, 0.8f));
-            GL.PointSize(2.0f);
+            _particleShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
+            _particleShader.SetVector4("Color", new Vector4(0.9f, 0.7f, 0, 0.8f));
+            //_particleShader.SetVector4("Color", new Vector4(0.0f, 0.0f, 0, 0.8f));
+            GL.PointSize(1.0f);
             _particleVAO.Draw(PrimitiveType.Points, 0, (int)(_nParticles.x * _nParticles.y * _nParticles.z));
         }
 
         private void DrawVortexWithTexture()
         {
             _vortexShader.Use();
+            _vortexShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
             _vortexVAO.Bind();
             GL.VertexAttribDivisor(1, 1);
             GL.DrawArraysInstanced(PrimitiveType.Triangles, 0, 6, _vortexStructArray.Length);
@@ -288,7 +289,7 @@ namespace DemoFlowVisualization
 
         private void SetVoretexVelocity(List<Vortex> freeVortexes, int startIndex)
         {
-            var gpuVortexVelocities = _velocityBuffer.GetVector2Data();
+            var gpuVortexVelocities = _velocityVortexBuffer.GetVector2Data();
             for (var i = 0; i < freeVortexes.Count; i++)
             {
                 freeVortexes[i].InVelocity =
@@ -326,8 +327,9 @@ namespace DemoFlowVisualization
             var rnd = new Random();
             //var deltaR = outRadius - innerRadius; 
             float shiftX = -2.0f;
-            float L = 0.9f;
-            float thickness = 1.4f;
+            float shiftY = 1.3f;
+            float L = 0.3f;
+            float thickness = 4.0f;
 
             for (int k = 0; k < nParticles.z; k++)
                 for (int i = 0; i < nParticles.x; i++)
@@ -335,7 +337,7 @@ namespace DemoFlowVisualization
                     for (int j = 0; j < nParticles.y; j++)
                     {
                         var x = (float)(-L + 2 * L * rnd.NextDouble()) + shiftX;
-                        var y = (float)(-thickness + 2 * thickness * rnd.NextDouble());
+                        var y = (float)(-thickness + 2 * thickness * rnd.NextDouble()) + shiftY;
                         float z = 0.0f;
                         var w = 1.1f;
                         var p = new Vector4(x, y, z, w);
@@ -406,7 +408,7 @@ namespace DemoFlowVisualization
                     for (int j = 0; j < nParticles.y; j++)
                     {
                         var x = 0.0f;
-                        var y = (float)(5.5 + 20.0 * rnd.NextDouble());
+                        var y = (float)(0.5 + 20.0 * rnd.NextDouble());
                         lst.Add(new Vector2(x, y));
                     }
                 }
@@ -424,22 +426,12 @@ namespace DemoFlowVisualization
             GL.PointSize(1.0f);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         }
-
-        private void SetVisualShaders()
-        {
-            _particleShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
-            _vortexShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
-            _bodyShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
-        }
-
-        public void SetEye(float eyePos)
-        {
-            _eyePos = eyePos;
-        }
-
-        public void SetHorizontal(float xPosition)
+                
+        public void SetViewPoint(float xPosition, float eyePos)
         {
             _xCenter = xPosition;
+            _eyePos = eyePos;
+            _mvp.SetMvpMatrix(_xCenter, _eyePos, _angle, (float)Width / Height);
         }
     }
 }

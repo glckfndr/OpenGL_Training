@@ -193,7 +193,6 @@ namespace DemoFlowVisualization
             _vortexShader.SetMatrix4("model", _model.ConvertToMatrix4());
             _vortexShader.SetMatrix4("projection", _projection.ConvertToMatrix4());
             _vortexShader.SetMatrix4("view", _view.ConvertToMatrix4());
-            _vortexShader.Use();
             _vortexShader.SetVector4("Color", new Vector4(0.7f, 0.9f, 0.3f, 0.8f));
         }
 

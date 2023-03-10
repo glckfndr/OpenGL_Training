@@ -35,7 +35,7 @@ namespace ComputeShader2DVortex
 
         private float _time = 0;
         private float _deltaTime = 0.00005f;
-        private float _speed = 35.0f;
+       // private float _speed = 35.0f;
         private float _angle;
 
         //  private VertexArray _particleVAO;
