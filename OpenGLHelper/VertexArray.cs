@@ -57,14 +57,14 @@ namespace OpenGLHelper
 
         }
         
-        public static VertexArray GetVAO(StorageBuffer[] buffers, int[] ind, int[] num)
+        public static VertexArray GetVAO(StorageBuffer[] buffers, int[] layoutShaderIndexes, int[] numbersOfComponents)
         {
             // кількість елементів в структурі, якщо вони однкаклві для Vector2 це 2
             // Vector3 три 
             var vertexArray = new VertexArray();
             for (int i = 0; i < buffers.Length; i++)
             {
-                buffers[i].SetAttribPointer(ind[i], num[i]);
+                buffers[i].SetAttribPointer(layoutShaderIndexes[i], numbersOfComponents[i]);
             }
 
             vertexArray.Unbind();

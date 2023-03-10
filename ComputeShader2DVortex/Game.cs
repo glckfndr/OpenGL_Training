@@ -142,7 +142,6 @@ namespace ComputeShader2DVortex
             if (_is3D)
             {
                 SetShaderMatrices();
-
                 _vortexShader.Use();
                 _vortexShader.SetVector4("Color", new Vector4(0.7f, 0.9f, 0.3f, 0.8f));
                 
@@ -164,7 +163,6 @@ namespace ComputeShader2DVortex
                 _renderShader.SetMatrix4("view", view.ConvertToMatrix4());
                 _renderShader.SetMatrix4("projection", proj.ConvertToMatrix4());
                 _renderShader.SetMatrix3("NormalMatrix", norm.ConvertToMatrix3());
-
                 _plane.Render();
             }
 
@@ -200,16 +198,13 @@ namespace ComputeShader2DVortex
             _renderShader.SetVector3("Ka", new Vector3(0.2f));
             _renderShader.SetVector3("Ks", new Vector3(0.2f));
             _renderShader.SetFloat("Shininess", 180.0f);
-
-
+            
             _velocityComputeShader = new Shader("../../Shaders/vortexVelocity2D.comp");
             _velocityComputeShader.SetInt("vortexNumber", _vortexNumber);
             _positionComputeShader = new Shader("../../Shaders/vortexPosition2D.comp");
             _positionComputeShader05 = new Shader("../../Shaders/vortexPosition2D05.comp");
             //_positionComputeShader.SetInt("_vortexNumber", _vortexNumber);
-
             _clearTextureComputeShader = new Shader("../../Shaders/clearTexture.comp");
-
         }
 
 
@@ -217,8 +212,7 @@ namespace ComputeShader2DVortex
         {
             KeyboardState input = Keyboard.GetState();
 
-            if (input.IsKeyDown(Key.Escape))
-            {
+            if (input.IsKeyDown(Key.Escape)){
                 Exit();
             }
 
@@ -234,16 +228,12 @@ namespace ComputeShader2DVortex
 
             if (input.IsKeyDown(Key.Space))
             {
-
                 _isPause = true;
-
             }
 
             if (input.IsKeyDown(Key.C))
             {
-
                 _isPause = false;
-
             }
 
 

@@ -80,66 +80,60 @@ namespace DemoFlowVisualization
         private GeometryShapeCollection GetShapeCollection()
         {
 
+
             var polygonPoints = new List<Vector>
             {
                 new Vector(-0.5, -0.5),
                 new Vector(-0.5, 0.5),
                 new Vector(0.5, 0.5),
                 new Vector(0.5, -0.5),
+            };
+
+            var shapes = new List<(Vector scale, Vector offset, double angle)>() {
+                (new Vector(0.5, 1.75), new Vector(2.0, -1), 0),
+                (new Vector(0.6, 1.2), new Vector(0, -1), 0),
+                (new Vector(0.6, 2), new Vector(2, 3.9), 0),
+                (new Vector(0.6, 1.2), new Vector(0, 1.0), 0),
+                (new Vector(0.5, 1.0), new Vector(2, 1.25), 0)
 
             };
 
             _bogyTriangles = new List<Vector2>();
             GeometryShapeCollection shapeCollection = new GeometryShapeCollection();
+           // GeometryShape polygon;
+            for (var i = 0; i < shapes.Count; i++)
+            {
+                var plg = CreateRectangle(polygonPoints, shapes[i]);
+                _bogyTriangles.AddRange(GetVertex(plg.Triangulation));
+                shapeCollection.AddShape(plg);
+            }
 
-            GeometryShape polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.5, 1.75), 0, new Vector(2.0, -1));
-            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
-            shapeCollection.AddShape(polygon);
-
-            polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.6, 1.2), 0, new Vector(0, -1));
-            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
-            shapeCollection.AddShape(polygon);
-
-            polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.6, 2), 0, new Vector(2, 3.9));
-            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
-            shapeCollection.AddShape(polygon);
-
-            polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.6, 1.2), 0, new Vector(0, 1.0));
-            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
-            shapeCollection.AddShape(polygon);
-
-            polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.5, 1.0), 0, new Vector(2, 1.25));
-            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
-            shapeCollection.AddShape(polygon);
 
             double offsetX = 4;
             double offsetY = 2.5;
             double angle = 90;
-            polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.5, 1.75), angle, new Vector(2.5 + offsetX, -1 + offsetY));
-            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
-            shapeCollection.AddShape(polygon);
+            shapes = new List<(Vector scale, Vector offset, double angle)>() {
+                (new Vector(0.5, 1.75), new Vector(2.5 + offsetX, -1 + offsetY), angle),
+                (new Vector(0.6, 1.2), new Vector(0 + offsetX, -1 + offsetY), angle),
+                (new Vector(0.7, 1.2), new Vector(0 + offsetX, 0.75 + offsetY), angle),
+                (new Vector(0.5, 1.2), new Vector(2 + offsetX, 0.75 + offsetY), angle)                
+            };
 
-            polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.6, 1.2), angle, new Vector(0 + offsetX, -1 + offsetY));
-            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
-            shapeCollection.AddShape(polygon);
-
-            polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.7, 1.2), angle, new Vector(0 + offsetX, 0.75 + offsetY));
-            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
-            shapeCollection.AddShape(polygon);
-
-            polygon = new GeometryShape(polygonPoints, true);
-            polygon.SetAll(new Vector(0.5, 1.2), angle, new Vector(2 + offsetX, 0.75 + offsetY));
-            _bogyTriangles.AddRange(GetVertex(polygon.Triangulation));
-            shapeCollection.AddShape(polygon);
+            for (var i = 0; i < shapes.Count; i++)
+            {
+                var plg = CreateRectangle(polygonPoints, shapes[i]);
+                _bogyTriangles.AddRange(GetVertex(plg.Triangulation));
+                shapeCollection.AddShape(plg);
+            }
+            
             return shapeCollection;
+        }
+
+        private static GeometryShape CreateRectangle(List<Vector> polygonPoints, (Vector scale, Vector offset, double angle) shape)
+        {
+            GeometryShape polygon = new GeometryShape(polygonPoints, true);
+            polygon.SetScaleRotateMove(shape.scale, shape.offset, shape.angle);
+            return polygon;
         }
 
         private List<Vector2> GetVertex(List<Triangle> polygonTriangulation)
@@ -176,12 +170,14 @@ namespace DemoFlowVisualization
             _lifeTimeBuf = StorageBuffer.SetBufferData(GetLifeTime(_nParticles).ToArray(), 4);
             _bodyBufferObject = StorageBuffer.SetBufferData(_bogyTriangles.ToArray(), 6);
             // Set up the VAO
-            _particleVAO = VertexArray.GetVAO(new[] { _particleBuf, _particleVelBuf }, new[] { 0, 1 }, new[] { 4, 4 });
-            _vortexVAO = VertexArray.GetVAO(new[] { _vortexBuf }, new[] { 1 }, new[] { 4 });
-            _bodyVAO = VertexArray.GetVAO(new[] { _bodyBufferObject }, new[] { 6 }, new[] { 2 });
+            _particleVAO = VertexArray.GetVAO(new[] { _particleBuf, _particleVelBuf },
+                                                new[] { _particleBuf.LayoutShaderIndex, _particleVelBuf.LayoutShaderIndex },
+                                                new[] { 4, 4 });
+            _vortexVAO = VertexArray.GetVAO(new[] { _vortexBuf }, new[] { _vortexBuf.LayoutShaderIndex }, new[] { 4 });
+            _bodyVAO = VertexArray.GetVAO(new[] { _bodyBufferObject }, new[] { _bodyBufferObject.LayoutShaderIndex }, new[] { 2 });
 
         }
-        
+
         //private StorageBuffer SetBufferData<T>(T[] data, int layoutShaderIndex) where T : struct
         //{
         //    var buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);

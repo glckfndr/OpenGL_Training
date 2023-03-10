@@ -12,8 +12,7 @@ namespace ComputeShaderTwoVortexRing
         public Vector3 _r;
         public float _gamma;
         //public float _dummy;
-
-
+        
         public VortexPoint(Vector3D r, double gamma) : this()
         {
             _r.X = (float)r.X;
