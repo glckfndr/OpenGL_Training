@@ -66,21 +66,25 @@ namespace DemoFlowVisualization
             _vortexesFromMemory = new VortexesFromMemory(_vortexSystem);
             _vortexStructArray = _vortexesFromMemory.GetArrayOfVortexStruct();
             _vortexBuf.SubData(_vortexStructArray);
+
+            Console.WriteLine("Flow Around Building");
+            Console.WriteLine("Move camera left, right:  left, right arrow key");
+            Console.WriteLine("Zoom camera:  up, down arrow key");
+            Console.WriteLine("Pause, Continue:  space, C key");
+            Console.WriteLine("On, Off vortex:  V, N key");
         }
 
         private void SetGeometryAndVortexSystem()
         {
-            var shapeCollection = GetShapeCollection();
+            var shapeCollection = GetBuildings();
             var ds = new Discretizator(0.1, 0.1);
             _vortexSystem = new VortexSystem(shapeCollection, ds, new RankinVortex());
             _vortexSystem.FlowVelocity = _flowVelovity;
             _vortexSystem.FirstStep();
         }
 
-        private GeometryShapeCollection GetShapeCollection()
+        private GeometryShapeCollection GetBuildings()
         {
-
-
             var polygonPoints = new List<Vector>
             {
                 new Vector(-0.5, -0.5),
@@ -91,9 +95,9 @@ namespace DemoFlowVisualization
 
             var shapes = new List<(Vector scale, Vector offset, double angle)>() {
                 (new Vector(0.5, 1.75), new Vector(2.0, -1), 0),
-              //  (new Vector(0.6, 1.2), new Vector(0, -1), 0),
+                (new Vector(0.6, 1.2), new Vector(0, -1), 0),
                 (new Vector(0.6, 2), new Vector(2, 3.9), 0),
-              //  (new Vector(0.6, 1.2), new Vector(0, 1.0), 0),
+                (new Vector(0.6, 1.2), new Vector(0, 1.0), 0),
                 (new Vector(0.5, 1.0), new Vector(2, 1.25), 0)
 
             };
@@ -175,21 +179,7 @@ namespace DemoFlowVisualization
             _vortexVAO = VertexArray.GetVAO(new[] { _vortexBuf }, new[] { _vortexBuf.LayoutShaderIndex }, new[] { 4 });
             _bodyVAO = VertexArray.GetVAO(new[] { _bodyPositionBuf }, new[] { _bodyPositionBuf.LayoutShaderIndex }, new[] { 2 });
 
-        }
-
-        //private StorageBuffer SetBufferData<T>(T[] data, int layoutShaderIndex) where T : struct
-        //{
-        //    var buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
-        //    buffer.SetData(data, layoutShaderIndex); // copy data on GPU
-        //    return buffer;
-        //}
-
-        //private StorageBuffer AllocateBufferData<T>(T[] data, int layoutShaderIndex) where T : struct
-        //{
-        //    var buffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
-        //    buffer.Allocate(data, layoutShaderIndex); // allocate  data  on GPU
-        //    return buffer;
-        //}
+        }        
 
         private void CreateShaders()
         {
@@ -216,7 +206,7 @@ namespace DemoFlowVisualization
             {
                 if (_counter % 1 == 0)
                 {
-                    Console.WriteLine(_vortexSystem.Time);
+                   // Console.WriteLine(_vortexSystem.Time);
                     _counter = 0;
 
                     CalculateVortexVelocity();
@@ -224,7 +214,7 @@ namespace DemoFlowVisualization
                     //  _vortexSystem.NextStep();
                     _vortexSystem.NextStepGPU();
                     CopyVortexInGPU();
-                    Console.WriteLine("Len : " + _vortexStructArray.Length);
+                  //  Console.WriteLine("Len : " + _vortexStructArray.Length);
                 }
 
                 _counter++;
@@ -326,7 +316,7 @@ namespace DemoFlowVisualization
             List<Vector4> list = new List<Vector4>();
             var rnd = new Random();
             //var deltaR = outRadius - innerRadius; 
-            float shiftX = -2.0f;
+            float shiftX = -0.5f; // position of particle source on X
             float shiftY = 1.3f;
             float L = 0.3f;
             float thickness = 4.0f;

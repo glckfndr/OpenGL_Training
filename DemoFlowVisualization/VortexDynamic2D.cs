@@ -92,6 +92,14 @@ namespace DemoFlowVisualization
 
             SetOpenGlParameters();
             SetInitialMatrix();
+
+            Console.WriteLine("Movement of 2D Vortex Layer");
+            Console.WriteLine("Move camera left, right:  left, right arrow key");
+            Console.WriteLine("Zoom camera:  up, down arrow key");
+            Console.WriteLine("Pause, Continue:  space, C key");
+            Console.WriteLine("2D, 3D visualization:  2, 3 key");
+            //Console.WriteLine("On, Off vortex:  V, N key");
+
         }
 
         private void SetInitialMatrix()
