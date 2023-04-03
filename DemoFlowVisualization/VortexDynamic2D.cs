@@ -43,7 +43,7 @@ namespace DemoFlowVisualization
 
         //  private VertexArray _particleVAO;
         private MvpMatrix _mvp = new MvpMatrix();
-        private float _eyePos = 2.0f;
+        private float _eyePos = -1.0f;
         private float _xCenter = 0.0f;
 
         //private float _eyePos = 10.0f;
@@ -77,7 +77,7 @@ namespace DemoFlowVisualization
             _plane = new Plane(3.0f, 3.0f, 2, 2);
             //  _angle = 90.0f;
 
-            // List<VortexStruct> vortexes = VortexInitializer.GetVortexesInCircle(nParticles);
+            // List<VortexStruct> vortexes = VortexInitializer.GetVortexesInCircle(nVortexes);
             List<VortexStruct> vortexes = VortexInitializer.GetVortexesInLayer(nVortexes);
 
             _vortexBuffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
@@ -208,16 +208,10 @@ namespace DemoFlowVisualization
         private void SetRenderShader()
         {
             _angle = 90;
-            _view = glm.lookAt(new vec3(0, 0, _eyePos), new vec3(0, 0, 0), new vec3(0, 1, 0));
-            _model = glm.rotate(new mat4(1.0f), glm.radians(_angle), new vec3(1, 0.0f, 0.0f));
-            mat4 mv = _view * _model;
+                        
+            mat4 mv = _mvp.GetModelMatrixWithRotate(_angle);
             mat3 norm = new mat3(new vec3(mv[0]), new vec3(mv[1]), new vec3(mv[2]));
-            mat4 proj = glm.perspective(glm.radians(60.0f), (float)Width / Height, 1.0f, 100.0f);
-
-            _renderShader.SetMatrix4("model", _model.ConvertToMatrix4());
-            _renderShader.SetMatrix4("view", _view.ConvertToMatrix4());
-            _renderShader.SetMatrix4("projection", proj.ConvertToMatrix4());
-          
+            _renderShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
             _renderShader.SetMatrix3("NormalMatrix", norm.ConvertToMatrix3());
         }
 
@@ -225,7 +219,7 @@ namespace DemoFlowVisualization
         {
             _xCenter = xPosition;
             _eyePos = eyePos;
-            _mvp.SetMvpMatrix(_xCenter, _eyePos, _angle, (float)Width / Height);
+            _mvp.SetMvpMatrix(_xCenter, _eyePos, (float)Width / Height);
         }
     }
 }

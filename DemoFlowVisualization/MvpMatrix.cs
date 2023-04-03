@@ -13,16 +13,21 @@ namespace DemoFlowVisualization
         private mat4 _viewGlm;
         private mat4 _modelGlm;
 
-        public void SetMvpMatrix(float _xCenter, float _eyePos, float _angle, float ratio)
+        public void SetMvpMatrix(float xCenter, float eyePos, float ratio)
         {
             _modelGlm = new mat4(1.0f);
-            _viewGlm = glm.lookAt(new vec3(_xCenter, 0, _eyePos), new vec3(_xCenter, 0, 0), new vec3(0, 1, 0));
-            
-           // _modelGlm = glm.rotate(new mat4(1.0f), glm.radians(_angle), new vec3(0, 1.0f, 0.0f));
+            _viewGlm = glm.lookAt(new vec3(xCenter, 0, eyePos), new vec3(xCenter, 0, 0), new vec3(0, 1, 0));
             var proj = glm.perspective(glm.radians(60.0f), ratio, 0.1f, 100.0f);
             _model = _modelGlm.ConvertToMatrix4();
             _view = _viewGlm.ConvertToMatrix4();
             _projection = proj.ConvertToMatrix4();
+        }
+
+        public mat4 GetModelMatrixWithRotate(float angle)
+        {
+            _modelGlm = glm.rotate(new mat4(1.0f), glm.radians(angle), new vec3(1, 0.0f, 0.0f));
+            _model = _modelGlm.ConvertToMatrix4();
+            return _viewGlm * _modelGlm;
         }
 
         public Matrix4 GetModel() => _model;

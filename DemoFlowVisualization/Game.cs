@@ -15,8 +15,8 @@ namespace DemoFlowVisualization
         private bool _is3D = true;
         private bool _isPause = false;
 
-        private float _eyePos = 7.0f;
-        private float _xPosition = 1.0f;
+        private float _eyePos;
+        private float _xPosition;
         private ConsoleKey _selected;
 
         private VortexDynamic2D _vortexDynamic2D;
@@ -35,11 +35,15 @@ namespace DemoFlowVisualization
             var _selected = Console.ReadKey().Key;
             if (_selected == ConsoleKey.B)
             {
+                _eyePos = 7.0f;
+                _xPosition = 1.0f;
                 _rectangleFlow = new RectangleFlow(1024, 768);
             }
 
             if (_selected == ConsoleKey.L)
             {
+                _eyePos = 2.0f;
+                _xPosition = 0.0f;
                 _vortexDynamic2D = new VortexDynamic2D(800, 800);
             }
             //   _vortexDynamic2D = new VortexDynamic2D(800,800);
@@ -51,12 +55,14 @@ namespace DemoFlowVisualization
         {
             if (_vortexDynamic2D != null)
             {
+                
                 _vortexDynamic2D.ComputeAndDraw(_isPause, _is3D, _isDrawVortex);
                 _vortexDynamic2D.SetViewPoint(_xPosition, _eyePos);
             }
 
             if (_rectangleFlow != null)
             {
+                
                 _rectangleFlow.ComputeAndDraw(_isPause, _is3D, _isDrawVortex);
                 _rectangleFlow.SetViewPoint(_xPosition, _eyePos);
             }

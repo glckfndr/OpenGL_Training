@@ -423,7 +423,7 @@ namespace DemoFlowVisualization
         {
             _xCenter = xPosition;
             _eyePos = eyePos;
-            _mvp.SetMvpMatrix(_xCenter, _eyePos, _angle, (float)Width / Height);
+            _mvp.SetMvpMatrix(_xCenter, _eyePos, (float)Width / Height);
         }
     }
 }
