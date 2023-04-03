@@ -43,12 +43,14 @@ namespace DemoFlowVisualization
 
         private MvpMatrix _mvp = new MvpMatrix();
         private float _eyePos = 10.0f;
+        private float _xCenter = 1;
         private float _angle = 0;
+        
         private int Height;
         private int Width;
         private int _counter = 0;
         private VortexStruct[] _vortexStructArray = null;
-        private float _xCenter = 1;
+
         private Texture2D _texture;
         private List<Vector2> _bogyTriangles;
 

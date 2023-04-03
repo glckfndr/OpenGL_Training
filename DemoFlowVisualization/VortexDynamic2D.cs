@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace DemoFlowVisualization
 {
-    internal class VortexDynamic2D: ISimulator
+    internal class VortexDynamic2D : ISimulator
     {
         //  shaders for rendering
         private Shader _vortexShader;
@@ -30,19 +30,25 @@ namespace DemoFlowVisualization
         private vec3 nVortexes = new vec3(32, 16, 16);
         //private int _totalParticles;
         private int _vortexNumber;
-        private float _eyePos = 2.0f;
 
 
-        
+
+
         // private float _gamma = 0.1f;
 
         private float _time;
         private float _deltaTime = 0.0002f;
         //private float _speed = 35.0f;
-        private float _angle;
+        private float _angle = 90;
 
         //  private VertexArray _particleVAO;
-        
+        private MvpMatrix _mvp = new MvpMatrix();
+        private float _eyePos = 2.0f;
+        private float _xCenter = 0.0f;
+
+        //private float _eyePos = 10.0f;
+        //private float _xCenter = 1;
+
         private mat4 _projection;
         private mat4 _view;
         private mat4 _model;
@@ -55,7 +61,7 @@ namespace DemoFlowVisualization
         private int Width;
 
         private Plane _plane;
-        private float _xCenter;
+
 
 
         public VortexDynamic2D(int width, int height)
@@ -63,17 +69,17 @@ namespace DemoFlowVisualization
             Width = width;
             Height = height;
             _vortexNumber = (int)(nVortexes.x * nVortexes.y * nVortexes.z);
-             
+
             Console.WriteLine("Vortex Number: " + _vortexNumber);
             CreateShaders();
 
             _texture = new Texture2D(_textureWidth, _textureHeight, 0);
             _plane = new Plane(3.0f, 3.0f, 2, 2);
-            _angle = 90.0f;
+            //  _angle = 90.0f;
 
             // List<VortexStruct> vortexes = VortexInitializer.GetVortexesInCircle(nParticles);
-             List<VortexStruct> vortexes = VortexInitializer.GetVortexesInLayer(nVortexes);
-            
+            List<VortexStruct> vortexes = VortexInitializer.GetVortexesInLayer(nVortexes);
+
             _vortexBuffer = new StorageBuffer(BufferUsageHint.DynamicDraw);
             _vortexBuffer.SetData(vortexes.ToArray(), 0);
 
@@ -136,8 +142,8 @@ namespace DemoFlowVisualization
             if (!isPause)
             {
                 _time += _deltaTime;
-                    //  if (_time % 0.1 <= _deltaTime)
-                    Console.WriteLine("Time: " + _time);
+                //  if (_time % 0.1 <= _deltaTime)
+                Console.WriteLine("Time: " + _time);
 
                 _clearTextureComputeShader.Compute(_textureWidth / 16, _textureHeight / 16, 1, MemoryBarrierFlags.ShaderImageAccessBarrierBit);
 
@@ -173,7 +179,7 @@ namespace DemoFlowVisualization
             if (is3D)
             {
                 SetVortexShader3D();
-              //  _velocityBuffer.SetAttribPointer(2, _vortexNumber);
+                //  _velocityBuffer.SetAttribPointer(2, _vortexNumber);
                 _vortexVAO.Draw(PrimitiveType.Points, 0, _vortexNumber);
             }
             else
@@ -195,18 +201,13 @@ namespace DemoFlowVisualization
 
         private void SetVortexShader3D()
         {
-            _model = new mat4(1.0f);
-            _view = glm.lookAt(new vec3(0, 0, 2.0f), new vec3(0, 0, 0), new vec3(0, 1, 0));
-            _vortexShader.Use();
-            _vortexShader.SetMatrix4("model", _model.ConvertToMatrix4());
-            _vortexShader.SetMatrix4("projection", _projection.ConvertToMatrix4());
-            _vortexShader.SetMatrix4("view", _view.ConvertToMatrix4());
+            _vortexShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
             _vortexShader.SetVector4("Color", new Vector4(0.7f, 0.9f, 0.3f, 0.8f));
         }
 
         private void SetRenderShader()
         {
-            //_angle = 90;
+            _angle = 90;
             _view = glm.lookAt(new vec3(0, 0, _eyePos), new vec3(0, 0, 0), new vec3(0, 1, 0));
             _model = glm.rotate(new mat4(1.0f), glm.radians(_angle), new vec3(1, 0.0f, 0.0f));
             mat4 mv = _view * _model;
@@ -216,17 +217,15 @@ namespace DemoFlowVisualization
             _renderShader.SetMatrix4("model", _model.ConvertToMatrix4());
             _renderShader.SetMatrix4("view", _view.ConvertToMatrix4());
             _renderShader.SetMatrix4("projection", proj.ConvertToMatrix4());
+          
             _renderShader.SetMatrix3("NormalMatrix", norm.ConvertToMatrix3());
         }
 
-        public void SetEye(float eyePos)
-        {
-            _eyePos = eyePos;
-        }
-
-        public void SetHorizontal(float xPosition)
+        public void SetViewPoint(float xPosition, float eyePos)
         {
             _xCenter = xPosition;
+            _eyePos = eyePos;
+            _mvp.SetMvpMatrix(_xCenter, _eyePos, _angle, (float)Width / Height);
         }
     }
 }
