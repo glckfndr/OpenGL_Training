@@ -28,46 +28,28 @@ namespace DemoFlowVisualization
         private VertexArray _vortexVAO;
 
         private vec3 nVortexes = new vec3(32, 16, 16);
-        //private int _totalParticles;
         private int _vortexNumber;
-
-
-
-
-        // private float _gamma = 0.1f;
 
         private float _time;
         private float _deltaTime = 0.0002f;
-        //private float _speed = 35.0f;
-        private float _angle = 90;
+        private float _angle;
 
-        //  private VertexArray _particleVAO;
         private MvpMatrix _mvp = new MvpMatrix();
         private float _eyePos = -1.0f;
         private float _xCenter = 0.0f;
-
-        //private float _eyePos = 10.0f;
-        //private float _xCenter = 1;
-
-        private mat4 _projection;
-        private mat4 _view;
-        private mat4 _model;
+        private float _yCenter;
 
         private Texture2D _texture;
         private int _textureHeight = 1024;
         private int _textureWidth = 1024;
 
-        private int Height;
-        private int Width;
 
+        private float _screenRatio;
         private Plane _plane;
-
-
 
         public VortexDynamic2D(int width, int height)
         {
-            Width = width;
-            Height = height;
+            _screenRatio = (float)width / height;
             _vortexNumber = (int)(nVortexes.x * nVortexes.y * nVortexes.z);
 
             Console.WriteLine("Vortex Number: " + _vortexNumber);
@@ -75,7 +57,6 @@ namespace DemoFlowVisualization
 
             _texture = new Texture2D(_textureWidth, _textureHeight, 0);
             _plane = new Plane(3.0f, 3.0f, 2, 2);
-            //  _angle = 90.0f;
 
             // List<VortexStruct> vortexes = VortexInitializer.GetVortexesInCircle(nVortexes);
             List<VortexStruct> vortexes = VortexInitializer.GetVortexesInLayer(nVortexes);
@@ -97,26 +78,17 @@ namespace DemoFlowVisualization
             _vortexVAO.Unbind();
 
             SetOpenGlParameters();
-            SetInitialMatrix();
 
             Console.WriteLine("Movement of 2D Vortex Layer");
             Console.WriteLine("Move camera left, right:  left, right arrow key");
             Console.WriteLine("Zoom camera:  up, down arrow key");
             Console.WriteLine("Pause, Continue:  space, C key");
             Console.WriteLine("2D, 3D visualization:  2, 3 key");
-            //Console.WriteLine("On, Off vortex:  V, N key");
 
-        }
-
-        private void SetInitialMatrix()
-        {
-            _model = new mat4(1.0f);
-            _projection = glm.perspective(glm.radians(60.0f), (float)Width / Height, 0.1f, 100.0f);
         }
 
         private void CreateShaders()
         {
-            //_particleShader = new Shader("../../Shaders/particles.vert", "../../Shaders/particles.frag");
             _vortexShader = new Shader("../../Shaders/vortex.vert", "../../Shaders/vortex.frag");
             _renderShader = new Shader("../../Shaders/ads.vert", "../../Shaders/ads.frag");
             _renderShader.Use();
@@ -127,12 +99,10 @@ namespace DemoFlowVisualization
             _renderShader.SetVector3("Ks", new Vector3(0.2f));
             _renderShader.SetFloat("Shininess", 180.0f);
 
-
             _velocityComputeShader = new Shader("../../Shaders/vortexVelocity2D.comp");
             _velocityComputeShader.SetInt("vortexNumber", _vortexNumber);
             _positionComputeShader = new Shader("../../Shaders/vortexPosition2D.comp");
             _positionComputeShader05 = new Shader("../../Shaders/vortexPosition2D05.comp");
-            //_positionComputeShader.SetInt("_vortexNumber", _vortexNumber);
 
             _clearTextureComputeShader = new Shader("../../Shaders/clearTexture.comp");
         }
@@ -143,15 +113,13 @@ namespace DemoFlowVisualization
             {
                 _time += _deltaTime;
                 //  if (_time % 0.1 <= _deltaTime)
-                Console.WriteLine("Time: " + _time);
+                //  Console.WriteLine("Time: " + _time);
+                Console.Write(".");
 
                 _clearTextureComputeShader.Compute(_textureWidth / 16, _textureHeight / 16, 1, MemoryBarrierFlags.ShaderImageAccessBarrierBit);
-
-                //_velocityComputeShader.Use();
                 _velocityComputeShader.SetInt("vortexNumber", _vortexNumber);
 
                 // Bind buffers to compute shader
-                //_vortexBuffer.Bind(0);
                 _vortexBuffer.BindLayout(0);
                 _velocityBuffer.BindLayout(1);
                 // start compute shader
@@ -162,7 +130,6 @@ namespace DemoFlowVisualization
                 _positionComputeShader05.SetFloat("deltaTime", _deltaTime / 2);
                 // start compute shader
                 _positionComputeShader05.Compute(_vortexNumber / 128, 1, 1, MemoryBarrierFlags.ShaderStorageBarrierBit);
-
                 // Bind buffers to compute shader
                 _vortexBuffer05.BindLayout(0);
                 // start compute shader
@@ -178,12 +145,14 @@ namespace DemoFlowVisualization
 
             if (is3D)
             {
+                _angle = 0;
                 SetVortexShader3D();
                 //  _velocityBuffer.SetAttribPointer(2, _vortexNumber);
                 _vortexVAO.Draw(PrimitiveType.Points, 0, _vortexNumber);
             }
             else
             {
+                _angle = 90;
                 _renderShader.Use();
                 SetRenderShader();
                 _plane.Render();
@@ -207,19 +176,16 @@ namespace DemoFlowVisualization
 
         private void SetRenderShader()
         {
-            _angle = 90;
-                        
-            mat4 mv = _mvp.GetModelMatrixWithRotate(_angle);
-            mat3 norm = new mat3(new vec3(mv[0]), new vec3(mv[1]), new vec3(mv[2]));
             _renderShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
-            _renderShader.SetMatrix3("NormalMatrix", norm.ConvertToMatrix3());
+            _renderShader.SetMatrix3("NormalMatrix", _mvp.GetNormalMatrix());
         }
 
-        public void SetViewPoint(float xPosition, float eyePos)
+        public void SetViewPoint(float xPosition, float yPosition, float eyePos)
         {
             _xCenter = xPosition;
+            _yCenter = yPosition;
             _eyePos = eyePos;
-            _mvp.SetMvpMatrix(_xCenter, _eyePos, (float)Width / Height);
+            _mvp.SetMvpMatrix(_xCenter, _yCenter, _eyePos, _angle, _screenRatio);
         }
     }
 }

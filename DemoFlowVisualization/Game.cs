@@ -8,8 +8,6 @@ using System.Threading;
 
 namespace DemoFlowVisualization
 {
-
-
     public class Game : GameWindow
     {
         private bool _is3D = true;
@@ -17,11 +15,12 @@ namespace DemoFlowVisualization
 
         private float _eyePos;
         private float _xPosition;
-        private ConsoleKey _selected;
-
+        private float _yPosition;
+        
         private VortexDynamic2D _vortexDynamic2D;
         private RectangleFlow _rectangleFlow;
         private bool _isDrawVortex = true;
+        
 
         public Game(int width, int height, string title) :
             base(width, height, GraphicsMode.Default, title)
@@ -31,12 +30,13 @@ namespace DemoFlowVisualization
 
         protected override void OnLoad(EventArgs e)
         {
-            Console.WriteLine("Select Simulation (B or L)");
+            Console.WriteLine("Select Simulation: B - buildings or L - vortex layer");
             var _selected = Console.ReadKey().Key;
             if (_selected == ConsoleKey.B)
             {
                 _eyePos = 7.0f;
                 _xPosition = 1.0f;
+                _yPosition = 1.0f;
                 _rectangleFlow = new RectangleFlow(1024, 768);
             }
 
@@ -44,6 +44,7 @@ namespace DemoFlowVisualization
             {
                 _eyePos = 2.0f;
                 _xPosition = 0.0f;
+                _yPosition = 0.0f;
                 _vortexDynamic2D = new VortexDynamic2D(800, 800);
             }
             //   _vortexDynamic2D = new VortexDynamic2D(800,800);
@@ -55,16 +56,14 @@ namespace DemoFlowVisualization
         {
             if (_vortexDynamic2D != null)
             {
-                
                 _vortexDynamic2D.ComputeAndDraw(_isPause, _is3D, _isDrawVortex);
-                _vortexDynamic2D.SetViewPoint(_xPosition, _eyePos);
+                _vortexDynamic2D.SetViewPoint(_xPosition, _yPosition,_eyePos);
             }
 
             if (_rectangleFlow != null)
             {
-                
                 _rectangleFlow.ComputeAndDraw(_isPause, _is3D, _isDrawVortex);
-                _rectangleFlow.SetViewPoint(_xPosition, _eyePos);
+                _rectangleFlow.SetViewPoint(_xPosition, _yPosition, _eyePos);
             }
 
             Context.SwapBuffers();
@@ -138,6 +137,17 @@ namespace DemoFlowVisualization
             {
                 _isDrawVortex = false;
             }
+
+            if (input.IsKeyDown(Key.W))
+            {
+                _yPosition -= 0.1f;
+            }
+            if (input.IsKeyDown(Key.S))
+            {
+                _yPosition += 0.1f;
+            }
+
+
         }
 
         protected override void OnResize(EventArgs e)

@@ -44,8 +44,9 @@ namespace DemoFlowVisualization
         private MvpMatrix _mvp = new MvpMatrix();
         private float _eyePos = 10.0f;
         private float _xCenter = 1;
+        private float _yCenter;
         private float _angle = 0;
-        
+
         private int Height;
         private int Width;
         private int _counter = 0;
@@ -106,7 +107,7 @@ namespace DemoFlowVisualization
 
             _bogyTriangles = new List<Vector2>();
             GeometryShapeCollection shapeCollection = new GeometryShapeCollection();
-           // GeometryShape polygon;
+            // GeometryShape polygon;
             for (var i = 0; i < shapes.Count; i++)
             {
                 var plg = CreateRectangle(polygonPoints, shapes[i]);
@@ -121,7 +122,7 @@ namespace DemoFlowVisualization
                 (new Vector(0.5, 1.75), new Vector(2.5 + offsetX, -1 + offsetY), angle),
                 (new Vector(0.6, 1.2), new Vector(0 + offsetX, -1 + offsetY), angle),
                 (new Vector(0.7, 1.2), new Vector(0 + offsetX, 0.75 + offsetY), angle),
-                (new Vector(0.5, 1.2), new Vector(2 + offsetX, 0.75 + offsetY), angle)                
+                (new Vector(0.5, 1.2), new Vector(2 + offsetX, 0.75 + offsetY), angle)
             };
 
             //for (var i = 0; i < shapes.Count; i++)
@@ -130,7 +131,7 @@ namespace DemoFlowVisualization
             //    _bogyTriangles.AddRange(GetVertex(plg.Triangulation));
             //    shapeCollection.AddShape(plg);
             //}
-            
+
             return shapeCollection;
         }
 
@@ -161,8 +162,8 @@ namespace DemoFlowVisualization
             const string texName = "../../Textures/bubble.png";
             _texture = new Texture2D(texName, TextureWrapMode.Repeat);
             _texture.Use();
-             var particles = GetParticles(_nParticles).ToArray();
-           // var particles = GetParticlesInCircles(_nParticles).ToArray();
+            var particles = GetParticles(_nParticles).ToArray();
+            // var particles = GetParticlesInCircles(_nParticles).ToArray();
             _particlePositionBuf = StorageBuffer.SetBufferData(particles, 0); // layout 0 in particle.comp, particle.vert
 
             var vortexStructs = new VortexStruct[_maxNumberOfVortex];
@@ -181,7 +182,7 @@ namespace DemoFlowVisualization
             _vortexVAO = VertexArray.GetVAO(new[] { _vortexBuf }, new[] { _vortexBuf.LayoutShaderIndex }, new[] { 4 });
             _bodyVAO = VertexArray.GetVAO(new[] { _bodyPositionBuf }, new[] { _bodyPositionBuf.LayoutShaderIndex }, new[] { 2 });
 
-        }        
+        }
 
         private void CreateShaders()
         {
@@ -208,15 +209,14 @@ namespace DemoFlowVisualization
             {
                 if (_counter % 1 == 0)
                 {
-                   // Console.WriteLine(_vortexSystem.Time);
                     _counter = 0;
+                    Console.Write(".");
 
                     CalculateVortexVelocity();
                     // робимо крок по часу методом дискретних вихорів
                     //  _vortexSystem.NextStep();
                     _vortexSystem.NextStepGPU();
                     CopyVortexInGPU();
-                  //  Console.WriteLine("Len : " + _vortexStructArray.Length);
                 }
 
                 _counter++;
@@ -224,7 +224,7 @@ namespace DemoFlowVisualization
             }
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            
+
             //  малювання частинок
             DrawParticleWithPoints();
             // малювання вихорів текстурами
@@ -251,7 +251,7 @@ namespace DemoFlowVisualization
         }
 
         private void DrawParticleWithPoints()
-        {            
+        {
             _particleShader.Use();
             _particleShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
             _particleShader.SetVector4("Color", new Vector4(0.9f, 0.7f, 0, 0.8f));
@@ -418,12 +418,13 @@ namespace DemoFlowVisualization
             GL.PointSize(1.0f);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         }
-                
-        public void SetViewPoint(float xPosition, float eyePos)
+
+        public void SetViewPoint(float xPosition, float yPosition, float eyePos)
         {
             _xCenter = xPosition;
+            _yCenter = yPosition;
             _eyePos = eyePos;
-            _mvp.SetMvpMatrix(_xCenter, _eyePos, (float)Width / Height);
+            _mvp.SetMvpMatrix(_xCenter, _yCenter, _eyePos, _angle, (float)Width / Height);
         }
     }
 }
