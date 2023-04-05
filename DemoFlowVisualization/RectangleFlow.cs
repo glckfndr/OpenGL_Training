@@ -70,11 +70,13 @@ namespace DemoFlowVisualization
             _vortexStructArray = _vortexesFromMemory.GetArrayOfVortexStruct();
             _vortexBuf.SubData(_vortexStructArray);
 
-            Console.WriteLine("Flow Around Building");
-            Console.WriteLine("Move camera left, right:  left, right arrow key");
-            Console.WriteLine("Zoom camera:  up, down arrow key");
-            Console.WriteLine("Pause, Continue:  space, C key");
-            Console.WriteLine("On, Off vortex:  V, N key");
+            
+            Console.WriteLine("\n --- 2D Air Flow Around Buildings ---");
+            Console.WriteLine("Move camera Left, Right:  Left, Right Arrow key");
+            Console.WriteLine("Zoom camera:  Up, Down Arrow key");
+            Console.WriteLine("Pause - Space, Continue - C key");
+            Console.WriteLine("On vortex - V key, Off Vortex - N key");
+            Console.WriteLine("Quit - Esc");
         }
 
         private void SetGeometryAndVortexSystem()
@@ -243,7 +245,7 @@ namespace DemoFlowVisualization
 
         private void DrawBody()
         {
-            _bodyShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
+            _bodyShader.SetMvpMatrix(_mvp.Model, _mvp.View, _mvp.Projection);
             _bodyShader.Use();
             _bodyVAO.Draw(PrimitiveType.Triangles, 0, _bogyTriangles.Count);
             // GL.PointSize(8.0f);
@@ -253,7 +255,7 @@ namespace DemoFlowVisualization
         private void DrawParticleWithPoints()
         {
             _particleShader.Use();
-            _particleShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
+            _particleShader.SetMvpMatrix(_mvp.Model, _mvp.View, _mvp.Projection);
             _particleShader.SetVector4("Color", new Vector4(0.9f, 0.7f, 0, 0.8f));
             //_particleShader.SetVector4("Color", new Vector4(0.0f, 0.0f, 0, 0.8f));
             GL.PointSize(1.0f);
@@ -263,7 +265,7 @@ namespace DemoFlowVisualization
         private void DrawVortexWithTexture()
         {
             _vortexShader.Use();
-            _vortexShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
+            _vortexShader.SetMvpMatrix(_mvp.Model, _mvp.View, _mvp.Projection);
             _vortexVAO.Bind();
             GL.VertexAttribDivisor(1, 1);
             GL.DrawArraysInstanced(PrimitiveType.Triangles, 0, 6, _vortexStructArray.Length);

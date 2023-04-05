@@ -20,18 +20,21 @@ namespace DemoFlowVisualization
         private Shader _positionComputeShader05;
 
         private Shader _clearTextureComputeShader;
-
+        // data store on GPU
         private StorageBuffer _vortexBuffer05;
         private StorageBuffer _vortexBuffer;
         private StorageBuffer _velocityBuffer;
-
+        
+        // vortex array object for OpenGL
         private VertexArray _vortexVAO;
 
         private vec3 nVortexes = new vec3(32, 16, 16);
         private int _vortexNumber;
 
         private float _time;
+        // simulation time step
         private float _deltaTime = 0.0002f;
+        // angle for veiw in LookAt
         private float _angle;
 
         private MvpMatrix _mvp = new MvpMatrix();
@@ -42,7 +45,6 @@ namespace DemoFlowVisualization
         private Texture2D _texture;
         private int _textureHeight = 1024;
         private int _textureWidth = 1024;
-
 
         private float _screenRatio;
         private Plane _plane;
@@ -78,18 +80,21 @@ namespace DemoFlowVisualization
             _vortexVAO.Unbind();
 
             SetOpenGlParameters();
-
-            Console.WriteLine("Movement of 2D Vortex Layer");
-            Console.WriteLine("Move camera left, right:  left, right arrow key");
-            Console.WriteLine("Zoom camera:  up, down arrow key");
-            Console.WriteLine("Pause, Continue:  space, C key");
+            // Input explanation
+            Console.WriteLine("\n --- Movement of 2D Vortex Layer --- ");
+            Console.WriteLine("Move camera Left, Right:  Left, Right Arrow key");
+            Console.WriteLine("Move camera Up - W, Down - S");
+            Console.WriteLine("Zoom camera:  Up, Down Arrow key");
+            Console.WriteLine("Pause - Space, Continue - C key");
             Console.WriteLine("2D, 3D visualization:  2, 3 key");
+            Console.WriteLine("Quit - Esc");
 
         }
 
         private void CreateShaders()
         {
             _vortexShader = new Shader("../../Shaders/vortex.vert", "../../Shaders/vortex.frag");
+            
             _renderShader = new Shader("../../Shaders/ads.vert", "../../Shaders/ads.frag");
             _renderShader.Use();
             _renderShader.SetVector4("LightPosition", new Vector4(2.0f, 2.0f, 2.0f, 1.0f));
@@ -101,6 +106,7 @@ namespace DemoFlowVisualization
 
             _velocityComputeShader = new Shader("../../Shaders/vortexVelocity2D.comp");
             _velocityComputeShader.SetInt("vortexNumber", _vortexNumber);
+            
             _positionComputeShader = new Shader("../../Shaders/vortexPosition2D.comp");
             _positionComputeShader05 = new Shader("../../Shaders/vortexPosition2D05.comp");
 
@@ -170,14 +176,15 @@ namespace DemoFlowVisualization
 
         private void SetVortexShader3D()
         {
-            _vortexShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
+            _vortexShader.SetMvpMatrix(_mvp.Model, _mvp.View, _mvp.Projection);
             _vortexShader.SetVector4("Color", new Vector4(0.7f, 0.9f, 0.3f, 0.8f));
         }
 
         private void SetRenderShader()
         {
-            _renderShader.SetMvpMatrix(_mvp.GetModel(), _mvp.GetView(), _mvp.GetProjection());
-            _renderShader.SetMatrix3("NormalMatrix", _mvp.GetNormalMatrix());
+            _renderShader.SetMvpMatrix(_mvp.Model, _mvp.View, _mvp.Projection);
+            _renderShader.SetMatrix3("NormalMatrix", _mvp.NormalMatrix);
+            
         }
 
         public void SetViewPoint(float xPosition, float yPosition, float eyePos)

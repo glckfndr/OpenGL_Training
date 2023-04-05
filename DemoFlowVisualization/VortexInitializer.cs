@@ -37,11 +37,6 @@ namespace DemoFlowVisualization
             return list;
         }
 
-
-        
-
-
-
         public static List<VortexStruct> GetVortexesInLayer(vec3 nParticles)
         {
             List<VortexStruct> list = new List<VortexStruct>();
@@ -51,7 +46,6 @@ namespace DemoFlowVisualization
             float thickness = 0.02f;
             var totalParticle = nParticles.x * nParticles.y * nParticles.z;
             float gamma = (float)(_totalCirculation / totalParticle);
-
 
             for (int i = 0; i < nParticles.x; i++)
             {
@@ -95,6 +89,5 @@ namespace DemoFlowVisualization
 
             return list;
         }
-
     }
 }

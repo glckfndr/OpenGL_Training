@@ -31,10 +31,9 @@ namespace DemoFlowVisualization
             _normalMatrix = norm.ConvertToMatrix3();
         }
 
-        public Matrix3 GetNormalMatrix() => _normalMatrix;
-        public Matrix4 GetModel() => _model;
-        public Matrix4 GetView() => _view;
-        public Matrix4 GetProjection() => _projection;       
-
+        public Matrix3 NormalMatrix => _normalMatrix;
+        public Matrix4 Model => _model;
+        public Matrix4 View => _view;
+        public Matrix4 Projection => _projection;
     }
 }
